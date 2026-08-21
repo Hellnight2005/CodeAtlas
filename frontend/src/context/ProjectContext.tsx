@@ -7,6 +7,7 @@ interface Project {
     name: string;
     path: string;
     status: string;
+    isCurrent?: boolean;
     last_indexed_at?: string;
 }
 
