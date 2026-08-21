@@ -252,9 +252,8 @@ context:
                 // 6. AST Parser Engine
                 try {
                     const ParserManager = require('../parser/ParserManager');
-                    const pm = new ParserManager();
-                    const testAst = pm.parse('const x = 10;', 'test.js');
-                    console.log(testAst ? pc.green('✔  6. AST Parser Engine (Babel / Python): ') + pc.gray('Ready') : pc.yellow('⚠  6. AST Parser Engine: Warning'));
+                    const testAst = ParserManager.parseFile('const x = 10;', 'test.js', 'doctor-test');
+                    console.log(testAst ? pc.green('✔  6. AST Parser Engine (Babel / Python / Generic): ') + pc.gray('Ready') : pc.yellow('⚠  6. AST Parser Engine: Warning'));
                 } catch (err) {
                     console.log(pc.red(`✖  6. AST Parser Engine: Error (${err.message})`));
                 }
