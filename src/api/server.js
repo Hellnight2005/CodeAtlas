@@ -132,7 +132,17 @@ async function createApiServer() {
             const neo4jAuth = req.body.neo4jAuth || config.graph.neo4jAuth || 'neo4j/codeatlas123';
             const Neo4jAdapter = require('../storage/Neo4jAdapter');
             const neo4jStorage = new Neo4jAdapter({ url: neo4jUrl, auth: neo4jAuth });
-            await neo4jStorage.initialize();
+            
+            try {
+                await neo4jStorage.initialize();
+            } catch (connErr) {
+                return res.status(400).json({
+                    success: false,
+                    error: `Could not connect to Neo4j on ${neo4jUrl}. Please ensure Neo4j Docker is running!`,
+                    dockerCommand: `docker run -d --name codeatlas-neo4j -p 7474:7474 -p 7687:7687 -e NEO4J_AUTH=neo4j/codeatlas123 neo4j:5-community`,
+                    details: connErr.message
+                });
+            }
 
             const allNodes = await storage.findNodes({ limit: 10000 });
             const allEdges = typeof storage.findEdges === 'function' ? await storage.findEdges({ limit: 20000 }) : [];
