@@ -227,28 +227,18 @@ async function createApiServer() {
             });
 
             if (nodes.length === 0) {
-                const GlobalRegistry = require('../storage/GlobalRegistry');
-                const registry = new GlobalRegistry();
-                await registry.initialize();
-                const currentProj = await registry.registerProject(process.cwd());
-                await registry.close();
-
-                if (currentProj && currentProj.id !== repoId) {
-                    repoId = currentProj.id;
-                    nodes = await storage.findNodes({
-                        repoId,
-                        label: type,
-                        name: filterPath,
-                        filePath: filterPath,
-                        limit: parseInt(limit || '100', 10)
-                    });
-                }
+                nodes = await storage.findNodes({
+                    label: type,
+                    name: filterPath,
+                    filePath: filterPath,
+                    limit: parseInt(limit || '100', 10)
+                });
             }
 
             const nodeIds = nodes.map(n => n.id);
             let edges = [];
             if (typeof storage.findEdges === 'function' && nodeIds.length > 0) {
-                edges = await storage.findEdges({ repoId, nodeIds });
+                edges = await storage.findEdges({ nodeIds });
             }
 
             res.json({
