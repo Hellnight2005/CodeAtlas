@@ -160,6 +160,132 @@ export default function SystemDoctorPage() {
                 </div>
             </form>
 
+            {/* Docker Compose Generator Form */}
+            <div className="bg-slate-900 border border-slate-800 rounded-lg p-5 space-y-4">
+                <div className="text-xs font-bold text-slate-200 uppercase flex items-center justify-between">
+                    <span className="flex items-center">
+                        <Database className="w-4 h-4 mr-2 text-cyan-400" />
+                        Interactive Docker Infrastructure Generator
+                    </span>
+                    <span className="text-slate-400 text-xs font-normal">Generate custom docker-compose.yml</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-slate-950 p-3 rounded border border-slate-800">
+                    <label className="flex items-center space-x-2 text-slate-200 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={dbProvider === 'neo4j'}
+                            onChange={(e) => setDbProvider(e.target.checked ? 'neo4j' : 'sqlite')}
+                            className="rounded border-slate-700 text-indigo-600 focus:ring-0"
+                        />
+                        <span>Neo4j Graph DB</span>
+                    </label>
+
+                    <label className="flex items-center space-x-2 text-slate-200 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={aiProvider === 'ollama'}
+                            onChange={(e) => setAiProvider(e.target.checked ? 'ollama' : 'none')}
+                            className="rounded border-slate-700 text-indigo-600 focus:ring-0"
+                        />
+                        <span>Ollama Local LLM</span>
+                    </label>
+
+                    <label className="flex items-center space-x-2 text-slate-200 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            defaultChecked={true}
+                            className="rounded border-slate-700 text-indigo-600 focus:ring-0"
+                        />
+                        <span>CodeAtlas Engine (5001)</span>
+                    </label>
+
+                    <label className="flex items-center space-x-2 text-slate-200 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            defaultChecked={true}
+                            className="rounded border-slate-700 text-indigo-600 focus:ring-0"
+                        />
+                        <span>Dashboard UI (3001)</span>
+                    </label>
+                </div>
+
+                {/* Generated Docker Compose Code */}
+                <div className="space-y-2">
+                    <div className="flex items-center justify-between text-slate-300 font-bold">
+                        <span>Generated docker-compose.yml</span>
+                        <div className="flex space-x-2">
+                            <button
+                                onClick={() => {
+                                    const text = document.getElementById('docker-code')?.innerText || '';
+                                    navigator.clipboard.writeText(text);
+                                    alert('Copied docker-compose.yml to clipboard!');
+                                }}
+                                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 text-xs transition-colors"
+                            >
+                                Copy Config
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const text = document.getElementById('docker-code')?.innerText || '';
+                                    const blob = new Blob([text], { type: 'text/yaml' });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = 'docker-compose.yml';
+                                    a.click();
+                                }}
+                                className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded text-xs transition-colors"
+                            >
+                                Download docker-compose.yml
+                            </button>
+                        </div>
+                    </div>
+
+                    <pre id="docker-code" className="bg-slate-950 p-4 rounded border border-slate-800 text-cyan-300 text-xs overflow-x-auto">
+{`version: '3.8'
+
+services:
+  codeatlas-engine:
+    image: node:20-alpine
+    container_name: codeatlas-engine
+    ports:
+      - "5001:5001"
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - AI_PROVIDER=${aiProvider}
+      - DB_PROVIDER=${dbProvider}
+    volumes:
+      - ~/.codeatlas:/root/.codeatlas
+    restart: unless-stopped
+${dbProvider === 'neo4j' ? `
+  neo4j:
+    image: neo4j:5-community
+    container_name: codeatlas-neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/codeatlas123
+    volumes:
+      - neo4j-data:/data
+` : ''}${aiProvider === 'ollama' ? `
+  ollama:
+    image: ollama/ollama:latest
+    container_name: codeatlas-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+` : ''}
+volumes:
+  neo4j-data:
+  ollama-models:`}
+                    </pre>
+                </div>
+            </div>
+
             <div className="bg-slate-900 border border-slate-800 rounded-lg p-5 space-y-3">
                 <div className="text-xs font-bold text-slate-200 uppercase">System Diagnostic Checks</div>
                 <div className="space-y-2">
