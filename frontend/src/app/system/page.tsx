@@ -169,16 +169,16 @@ export default function SystemDoctorPage() {
                                         const res = await fetch("http://localhost:5001/api/storage/migrate-to-neo4j", {
                                             method: "POST",
                                             headers: { "Content-Type": "application/json" },
-                                            body: JSON.stringify({ neo4jUrl: "bolt://localhost:7687", neo4jAuth: "neo4j/codeatlas123" })
+                                            body: JSON.stringify({ neo4jUrl: "http://localhost:7474", neo4jAuth: "neo4j/codeatlas123" })
                                         });
                                         const data = await res.json();
-                                        if (res.ok) {
+                                        if (res.ok && data.success) {
                                             setSaveMessage(`✔ ${data.message}`);
                                         } else {
-                                            setSaveMessage(`✖ Neo4j Sync Error: ${data.error}`);
+                                            setSaveMessage(`✖ Neo4j Sync Error: ${data.error || data.details}`);
                                         }
                                     } catch (err: any) {
-                                        setSaveMessage(`✖ Connection error: Is Neo4j Docker running on bolt://localhost:7687?`);
+                                        setSaveMessage(`✖ Connection error: Is Neo4j Docker running on http://localhost:7474?`);
                                     } finally {
                                         setSaving(false);
                                     }

@@ -5,11 +5,9 @@ class Neo4jAdapter extends StorageAdapter {
     constructor(options = {}) {
         super();
         let rawUrl = options.url || process.env.NEO4J_BASE_URL || 'http://localhost:7474';
-        if (rawUrl.startsWith('bolt://')) {
-            rawUrl = rawUrl.replace('bolt://', 'http://').replace(':7687', ':7474');
-        }
-        if (rawUrl.startsWith('neo4j://')) {
-            rawUrl = rawUrl.replace('neo4j://', 'http://').replace(':7687', ':7474');
+        rawUrl = rawUrl.replace(/^bolt:\/\//i, 'http://').replace(/^neo4j:\/\//i, 'http://').replace(':7687', ':7474');
+        if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
+            rawUrl = 'http://' + rawUrl;
         }
         this.baseUrl = rawUrl;
 
