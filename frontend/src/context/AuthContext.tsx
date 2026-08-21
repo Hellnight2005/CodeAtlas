@@ -24,20 +24,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const checkSession = async () => {
         try {
-            // Check session via backend proxy
-            const res = await fetch("/api/auth/me");
-            if (res.ok) {
-                const data = await res.json();
-                if (data.authenticated) {
-                    setUser(data.user);
-                } else {
-                    setUser(null);
-                }
-            } else {
-                setUser(null);
-            }
+            setUser({
+                githubId: "local",
+                username: "local-developer",
+                displayName: "Local Developer",
+                avatarUrl: "",
+                repos: []
+            });
         } catch (error) {
-            console.error("Session check failed:", error);
             setUser(null);
         } finally {
             setLoading(false);

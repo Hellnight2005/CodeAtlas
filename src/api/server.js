@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const { loadConfig } = require('../core/config');
 const SqliteAdapter = require('../storage/SqliteAdapter');
 const Neo4jAdapter = require('../storage/Neo4jAdapter');
