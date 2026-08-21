@@ -80,7 +80,10 @@ async function createApiServer() {
     app.get('/api/projects/:id/stats', async (req, res) => {
         try {
             const repoId = req.params.id || config.repository.id;
-            const nodes = await storage.findNodes({ repoId, limit: 10000 });
+            let nodes = await storage.findNodes({ repoId, limit: 10000 });
+            if (nodes.length === 0) {
+                nodes = await storage.findNodes({ limit: 10000 });
+            }
             const files = nodes.filter(n => n.label === 'File').length;
             const functions = nodes.filter(n => n.label === 'Function').length;
             const classes = nodes.filter(n => n.label === 'Class').length;
