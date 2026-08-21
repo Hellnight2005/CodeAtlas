@@ -28,35 +28,39 @@ class Neo4jAdapter extends StorageAdapter {
 
     async _cypher(statement, parameters = {}) {
         const url = `${this.baseUrl}/db/${this.dbName}/tx/commit`;
-        const response = await axios.post(
-            url,
-            { statements: [{ statement, parameters, resultDataContents: ["row", "graph"] }] },
-            { headers: { Authorization: this.authHeader, 'Content-Type': 'application/json' } }
-        );
+        try {
+            const response = await axios.post(
+                url,
+                { statements: [{ statement, parameters, resultDataContents: ["row", "graph"] }] },
+                { headers: { Authorization: this.authHeader, 'Content-Type': 'application/json' } }
+            );
 
-        if (response.data.errors && response.data.errors.length > 0) {
-            throw new Error(response.data.errors[0].message);
+            if (response.data.errors && response.data.errors.length > 0) {
+                throw new Error(response.data.errors[0].message);
+            }
+
+            return response.data.results[0];
+        } catch (err) {
+            const detailMsg = err.response?.data?.errors?.[0]?.message || err.message;
+            throw new Error(detailMsg);
         }
-
-        return response.data.results[0];
     }
 
     async saveNodes(nodes) {
         if (!nodes || !nodes.length) return;
         for (const node of nodes) {
+            const cleanLabel = (node.label || 'Entity').replace(/[^a-zA-Z0-9_]/g, '_');
             const statement = `
-                MERGE (n:${node.label || 'Entity'} {id: $id})
+                MERGE (n:${cleanLabel} {id: $id})
                 SET n.repoId = $repoId,
                     n.name = $name,
-                    n.filePath = $filePath,
-                    n += $props
+                    n.filePath = $filePath
             `;
             await this._cypher(statement, {
-                id: node.id,
-                repoId: node.repoId || 'default',
-                name: node.name,
-                filePath: node.filePath || '',
-                props: node.properties || {}
+                id: String(node.id || node.name),
+                repoId: String(node.repoId || 'default'),
+                name: String(node.name || node.id || ''),
+                filePath: String(node.filePath || '')
             });
         }
     }
@@ -64,18 +68,17 @@ class Neo4jAdapter extends StorageAdapter {
     async saveEdges(edges) {
         if (!edges || !edges.length) return;
         for (const edge of edges) {
-            const relType = edge.type ? edge.type.toUpperCase() : 'DEPENDS_ON';
+            const relType = (edge.type || 'DEPENDS_ON').toUpperCase().replace(/[^a-zA-Z0-9_]/g, '_');
             const statement = `
                 MATCH (a {id: $sourceId})
                 MATCH (b {id: $targetId})
                 MERGE (a)-[r:${relType}]->(b)
-                SET r.repoId = $repoId, r += $props
+                SET r.repoId = $repoId
             `;
             await this._cypher(statement, {
-                sourceId: edge.source,
-                targetId: edge.target,
-                repoId: edge.repoId || 'default',
-                props: edge.properties || {}
+                sourceId: String(edge.source),
+                targetId: String(edge.target),
+                repoId: String(edge.repoId || 'default')
             });
         }
     }
