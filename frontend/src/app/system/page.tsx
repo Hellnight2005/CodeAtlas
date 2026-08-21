@@ -135,6 +135,39 @@ export default function SystemDoctorPage() {
                         <div className="mt-3 text-[11px] text-slate-500 font-mono">
                             URL: bolt://localhost:7687 (Default Auth: neo4j/codeatlas123)
                         </div>
+
+                        {/* 1-Click Sync SQLite to Neo4j Button */}
+                        <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                            <button
+                                type="button"
+                                onClick={async (e) => {
+                                    e.stopPropagation();
+                                    setSaving(true);
+                                    setSaveMessage("Syncing local SQLite graph nodes to Neo4j Docker...");
+                                    try {
+                                        const res = await fetch("http://localhost:5001/api/storage/migrate-to-neo4j", {
+                                            method: "POST",
+                                            headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify({ neo4jUrl: "bolt://localhost:7687", neo4jAuth: "neo4j/codeatlas123" })
+                                        });
+                                        const data = await res.json();
+                                        if (res.ok) {
+                                            setSaveMessage(`✔ ${data.message}`);
+                                        } else {
+                                            setSaveMessage(`✖ Neo4j Sync Error: ${data.error}`);
+                                        }
+                                    } catch (err: any) {
+                                        setSaveMessage(`✖ Connection error: Is Neo4j Docker running on bolt://localhost:7687?`);
+                                    } finally {
+                                        setSaving(false);
+                                    }
+                                }}
+                                className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded text-[11px] transition-colors flex items-center space-x-1"
+                            >
+                                <Database className="w-3.5 h-3.5 mr-1" />
+                                <span>Sync Local Data to Neo4j</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
 

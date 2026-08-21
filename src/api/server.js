@@ -126,6 +126,36 @@ async function createApiServer() {
         res.json({ status: 'ok', provider: config.graph.provider });
     });
 
+    app.post('/api/storage/migrate-to-neo4j', async (req, res) => {
+        try {
+            const neo4jUrl = req.body.neo4jUrl || config.graph.neo4jUrl || 'bolt://localhost:7687';
+            const neo4jAuth = req.body.neo4jAuth || config.graph.neo4jAuth || 'neo4j/codeatlas123';
+            const Neo4jAdapter = require('../storage/Neo4jAdapter');
+            const neo4jStorage = new Neo4jAdapter({ url: neo4jUrl, auth: neo4jAuth });
+            await neo4jStorage.initialize();
+
+            const allNodes = await storage.findNodes({ limit: 10000 });
+            const allEdges = typeof storage.findEdges === 'function' ? await storage.findEdges({ limit: 20000 }) : [];
+
+            if (allNodes.length > 0) {
+                await neo4jStorage.saveNodes(allNodes);
+            }
+            if (allEdges.length > 0) {
+                await neo4jStorage.saveEdges(allEdges);
+            }
+            await neo4jStorage.close();
+
+            res.json({
+                success: true,
+                nodesMigrated: allNodes.length,
+                edgesMigrated: allEdges.length,
+                message: `Successfully synced ${allNodes.length} nodes and ${allEdges.length} relationships from local SQLite to Neo4j Docker container!`
+            });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
     app.post('/api/index', async (req, res) => {
         try {
             const repoPath = req.body.repoPath || process.cwd();

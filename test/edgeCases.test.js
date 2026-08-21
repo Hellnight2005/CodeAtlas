@@ -31,3 +31,23 @@ test('Edge Cases - Project Lock Safety', () => {
 
     ProjectLocker.releaseLock(repoId);
 });
+
+test('Edge Cases - Syntax Error AST Parsing Resilience', () => {
+    const IntelligenceExtractor = require('../src/extraction/IntelligenceExtractor');
+    const invalidJsCode = `function brokenSyntax( { const x = ; return ??? `;
+    
+    // Should not throw, should return empty or fallback nodes array safely
+    const extracted = IntelligenceExtractor.extract(invalidJsCode, 'broken.js', 'test-repo');
+    assert.ok(Array.isArray(extracted.nodes));
+    assert.ok(Array.isArray(extracted.edges));
+});
+
+test('Edge Cases - Regex Special Character Search Safety', () => {
+    const SearchEngine = require('../src/search/SearchEngine');
+    const searchEngine = new SearchEngine();
+    
+    // Test regex special characters query: [test] + (symbol) * ? \
+    const result = searchEngine.search('[test] + (symbol) * ? \\', []);
+    assert.ok(Array.isArray(result));
+    assert.strictEqual(result.length, 0);
+});
