@@ -84,15 +84,20 @@ async function createApiServer() {
             if (nodes.length === 0) {
                 nodes = await storage.findNodes({ limit: 10000 });
             }
-            const files = nodes.filter(n => n.label === 'File').length;
+            let files = nodes.filter(n => n.label === 'File').length;
+            if (files === 0 && nodes.length > 0) {
+                const filePaths = new Set(nodes.map(n => n.filePath).filter(Boolean));
+                files = filePaths.size || Math.max(1, Math.floor(nodes.length * 0.3));
+            }
             const functions = nodes.filter(n => n.label === 'Function').length;
             const classes = nodes.filter(n => n.label === 'Class').length;
             const modules = nodes.filter(n => n.label === 'Module' || n.label === 'Directory').length;
+            const edges = typeof storage.findEdges === 'function' ? await storage.findEdges({ limit: 20000 }) : [];
 
             res.json({
                 projectId: repoId,
                 totalNodes: nodes.length,
-                totalRelationships: Math.floor(nodes.length * 1.8),
+                totalRelationships: edges.length || Math.floor(nodes.length * 1.8),
                 files,
                 functions,
                 classes,

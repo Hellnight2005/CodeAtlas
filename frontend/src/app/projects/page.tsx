@@ -153,7 +153,7 @@ export default function ProjectsPage() {
             <div className="space-y-3">
                 <div className="flex items-center justify-between">
                     <div className="text-xs font-bold text-slate-400 uppercase">
-                        {showAllProjects ? `Registered Projects (${projects.length})` : "Active Working Project"}
+                        {showAllProjects ? `Registered Projects (${projects.length})` : "Project Details"}
                     </div>
                     <button
                         onClick={() => setShowAllProjects(!showAllProjects)}
