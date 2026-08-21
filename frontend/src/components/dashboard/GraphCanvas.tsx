@@ -83,8 +83,40 @@ function GraphCanvasInner({ onNodeClick, initialData, onReset }: { onNodeClick?:
         if (!initialData || !initialData.nodes) return;
 
         const center = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
-        const rawNodes = initialData.nodes.slice(0, nodeLimit);
+        const rawNodes = [...initialData.nodes.slice(0, nodeLimit)];
         setIsTruncated(initialData.nodes.length > nodeLimit);
+
+        // Identify or create Root Directory Folder node
+        let repoNode = rawNodes.find((n: any) => n.label === 'Repository');
+        if (!repoNode) {
+            repoNode = {
+                id: 'root-directory-folder',
+                label: 'Repository',
+                name: 'Project Root Folder',
+                data: { name: 'Project Root Folder', path: '.' }
+            };
+            rawNodes.unshift(repoNode);
+        }
+
+        // Collect all connected node IDs
+        const connectedNodeIds = new Set<string>();
+        (initialData.edges || []).forEach((e: any) => {
+            connectedNodeIds.add(e.source);
+            connectedNodeIds.add(e.target);
+        });
+
+        // Generate synthetic CONTAINS edges for unconnected files (.md, Docker, configs)
+        const allEdges = [...(initialData.edges || [])];
+        rawNodes.forEach((n: any) => {
+            if (n.id !== repoNode.id && !connectedNodeIds.has(n.id)) {
+                allEdges.push({
+                    id: `folder-contains->${n.id}`,
+                    source: repoNode.id,
+                    target: n.id,
+                    type: 'CONTAINS'
+                });
+            }
+        });
 
         const mappedNodes = rawNodes.map((n: any, index: number) => {
             const isRepo = n.label === 'Repository';
@@ -94,12 +126,12 @@ function GraphCanvasInner({ onNodeClick, initialData, onReset }: { onNodeClick?:
             const ringIndex = Math.floor(index / 12);
             const posInRing = index % 12;
             const itemsInRing = Math.min(12, rawNodes.length - ringIndex * 12);
-            const radius = 180 + ringIndex * 150;
+            const radius = isRepo ? 0 : 180 + ringIndex * 150;
             const angle = (posInRing / Math.max(itemsInRing, 1)) * 2 * Math.PI + (ringIndex * 0.3);
 
             const position = n.position || {
-                x: center.x + radius * Math.cos(angle),
-                y: center.y + radius * Math.sin(angle)
+                x: isRepo ? center.x : center.x + radius * Math.cos(angle),
+                y: isRepo ? center.y : center.y + radius * Math.sin(angle)
             };
 
             return {
@@ -108,23 +140,24 @@ function GraphCanvasInner({ onNodeClick, initialData, onReset }: { onNodeClick?:
                 data: { ...n.data, label, fullNode: n },
                 style: {
                     ...NEO_NODE_STYLE,
-                    width: isRepo ? 90 : 65,
-                    height: isRepo ? 90 : 65,
+                    width: isRepo ? 95 : 65,
+                    height: isRepo ? 95 : 65,
                     backgroundColor: getNodeColor(n.label),
                     fontSize: isRepo ? '11px' : '9px',
                     opacity: focusNodeId && focusNodeId !== n.id ? 0.4 : 1,
-                    border: focusNodeId === n.id ? '3px solid #3B82F6' : 'none'
+                    border: focusNodeId === n.id ? '3px solid #3B82F6' : (isRepo ? '2px solid #FFFFFF' : 'none')
                 }
             };
         });
 
-        const mappedEdges = (initialData.edges || []).map((e: any) => {
+        const mappedEdges = allEdges.map((e: any) => {
             const relType = e.type || 'CALLS';
             let strokeColor = '#64748B'; // slate-500
-            if (relType === 'IMPORTS') strokeColor = '#3B82F6'; // blue
-            if (relType === 'CALLS') strokeColor = '#10B981';   // emerald
-            if (relType === 'DEFINES') strokeColor = '#EC4899'; // pink
-            if (relType === 'EXTENDS') strokeColor = '#8B5CF6'; // purple
+            if (relType === 'IMPORTS') strokeColor = '#3B82F6';   // blue
+            if (relType === 'CALLS') strokeColor = '#10B981';     // emerald
+            if (relType === 'DEFINES') strokeColor = '#EC4899';   // pink
+            if (relType === 'EXTENDS') strokeColor = '#8B5CF6';   // purple
+            if (relType === 'CONTAINS') strokeColor = '#FFFFFF';  // WHITE LINE for Folder/Directory connection!
 
             return {
                 id: e.id,
@@ -132,7 +165,11 @@ function GraphCanvasInner({ onNodeClick, initialData, onReset }: { onNodeClick?:
                 target: e.target,
                 label: relType,
                 type: 'default',
-                style: { stroke: strokeColor, strokeWidth: 2 },
+                style: {
+                    stroke: strokeColor,
+                    strokeWidth: relType === 'CONTAINS' ? 1.5 : 2,
+                    strokeDasharray: relType === 'CONTAINS' ? '4 4' : undefined // white dashed line!
+                },
                 animated: relType === 'CALLS' || relType === 'IMPORTS'
             };
         });
