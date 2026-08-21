@@ -1,105 +1,124 @@
-# 🗺️ CodeAtlas — Local-First Graph-Native Code Intelligence Engine for AI Agents
+# CodeAtlas
 
-> **Stop making AI read the entire codebase. Make the graph tell the AI where to look.**
+> **Local-first code intelligence and structural context engine for developers and AI coding agents.**
 
-CodeAtlas is an open-source, local-first graph-native code intelligence engine. It parses source code repositories into a structured knowledge graph (Neo4j + SQLite), connects with AI Agents (Cursor, Antigravity, Claude Desktop) via the Model Context Protocol (MCP), and delivers graph-grounded evidence with zero cloud dependence.
-
----
-
-## 🌟 Key Highlights
-
-- 🧠 **Graph-RAG Retrieval Pipeline**: Combines lexical concept search with Neo4j 6-factor reranking to find exact source locations (`file`, `startLine`, `endLine`).
-- 🤖 **8 Progressive MCP Tools**: Exposes `codeatlas_search`, `codeatlas_get_context`, `codeatlas_find_symbol`, `codeatlas_get_callers`, `codeatlas_get_callees`, `codeatlas_get_dependencies`, `codeatlas_analyze_impact`, `codeatlas_trace_execution`.
-- ⚡ **Zero-Friction Local Experience**: Runs 100% offline on your machine (`~/.codeatlas/`). Zero telemetry, zero external AI API required.
-- 🚀 **Parallel Bounded Indexer**: Multi-core CPU parallel AST extraction with fast SHA-256 content hash skipping.
-- 📊 **Control Center & Full-Screen Canvas**: Next.js 16 interactive dashboard with tabbed node inspector, execution tracing, and keyboard navigation.
+CodeAtlas turns codebases into searchable, structural code graphs. It enables developers and AI agents to query repository structure, call relationships, dependencies, change impact, and execution flow without repeatedly rescanning or dumping raw code to LLMs.
 
 ---
 
-## 🚀 Quick Start
+## ⚡ Core Pipeline
 
-### 1. Installation
-```bash
-git clone https://github.com/Hellnight2005/CodeAtlas-.git
-cd CodeAtlas-
-npm install
-npm link
+```text
+Repository
+    ↓
+CodeAtlas Indexer
+    ↓
+AST & Static Analysis
+    ↓
+Structural Code Graph
+    ↓
+Query & Analysis Engine
+    ↓
+Context Compiler
+    ↓
+CLI / API / MCP Server / Dashboard
+    ↓
+Developers and AI Agents
 ```
 
-### 2. Run CodeAtlas on Any Project
-Navigate to any repository on your machine:
+---
+
+## 🚀 Key Features
+
+- **Local-First & Offline**: Zero mandatory cloud accounts, external databases, SaaS accounts, or API keys required.
+- **Multi-Language AST Parsing**: Supports JavaScript, TypeScript, JSX/TSX, Python, Go, Rust, Java, C/C++, PHP, HTML/CSS.
+- **Incremental Indexing**: Uses SHA256 file hashing to re-index only changed files, keeping indexing extremely fast.
+- **Query & Analysis Engine**:
+  - `find`: Find symbol definitions.
+  - `callers`: Traverse caller call-graph.
+  - `callees`: Traverse callee call-graph.
+  - `dependencies`: Inspect file and module dependency tree.
+  - `impact`: Calculate blast radius of code changes.
+  - `trace`: Trace step-by-step request execution paths.
+- **Context Compiler**: Assembles compact, token-budgeted markdown context packages for LLMs with token efficiency metrics.
+- **MCP Server**: Native Node.js Model Context Protocol (MCP) server for integration with Cursor, Claude Desktop, Antigravity, and AI agents.
+- **Modular Storage Adapters**: Embedded zero-config SQLite storage by default, with Neo4j support as an optional adapter.
+
+---
+
+## 🛠️ Quick Start & CLI Usage
+
+### Installation
+
 ```bash
-cd /path/to/your/project
+npm install -g codeatlas
+```
+
+### CLI Commands
+
+```bash
+# Initialize configuration in your repository
 codeatlas init
-codeatlas index .
-codeatlas serve
+
+# Index the repository
+codeatlas index
+
+# Check repository graph status
+codeatlas status
+
+# Run system diagnostics
+codeatlas doctor
+
+# Find symbol definitions
+codeatlas find UserService
+
+# Find callers of a function
+codeatlas callers AuthenticateUser
+
+# Find callees invoked by a function
+codeatlas callees AuthenticateUser
+
+# Inspect dependencies of a file
+codeatlas dependencies ./src/auth.js
+
+# Calculate change impact / blast radius
+codeatlas impact AuthenticateUser
+
+# Trace execution path sequence
+codeatlas trace POST /login
+
+# Start Model Context Protocol (MCP) server
+codeatlas mcp start
 ```
-- **Dashboard UI**: [http://localhost:3001](http://localhost:3001)
-- **REST API**: [http://localhost:5001](http://localhost:5001)
 
 ---
 
-## 🔌 Connecting to AI Agents via MCP
+## 🤖 MCP Integration for AI Agents
 
-Add CodeAtlas to your AI Agent (`mcp_config.json`):
+Add CodeAtlas to your AI tool configuration (e.g., `claude_desktop_config.json` or Cursor MCP settings):
 
 ```json
 {
   "mcpServers": {
     "codeatlas": {
       "command": "codeatlas",
-      "args": ["mcp", "start"],
-      "cwd": "/path/to/your/project"
+      "args": ["mcp", "start"]
     }
   }
 }
 ```
 
-Now ask your AI Agent natural questions:
-- *"How does the upload pipeline work?"*
-- *"What happens after POST /upload?"*
-- *"If I modify `directUpload.js`, what components are impacted?"*
-
----
-
-## 📊 Architecture
-
-```text
-User Question → AI Agent → CodeAtlas MCP (stdio)
-                              │
-                    ┌─────────┴─────────┐
-                    ▼                   ▼
-           Concept Normalization    Candidate Search
-                    │                   │
-                    └─────────┬─────────┘
-                              ▼
-                     Neo4j Graph Expansion
-                              │
-                              ▼
-                     6-Factor Reranking
-                              │
-                              ▼
-                   Token-Budgeted Context
-                              │
-                              ▼
-                   AI Agent Grounded Answer
-```
-
----
-
-## 💻 CLI Commands
-
-```bash
-codeatlas start           # One-command environment start (API + Dashboard + MCP)
-codeatlas index .         # Index repository into structural graph
-codeatlas watch           # File watcher with incremental indexing
-codeatlas doctor          # Diagnose Node.js, SQLite, Neo4j, and Search engine
-codeatlas benchmark       # Run performance latency & retrieval quality tests
-codeatlas reset           # Reset project graph safely (source code untouched)
-```
+Exposed MCP Tools:
+- `codeatlas_find_symbol`
+- `codeatlas_get_callers`
+- `codeatlas_get_callees`
+- `codeatlas_get_dependencies`
+- `codeatlas_analyze_impact`
+- `codeatlas_trace_execution`
+- `codeatlas_get_context`
 
 ---
 
 ## 📄 License
 
-MIT © [CodeAtlas Contributors](LICENSE)
+CodeAtlas is open-source software licensed under the [MIT License](./LICENSE).
