@@ -28,13 +28,13 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className="dark">
       <body
-        className={`${inter.variable} ${robotoMono.variable} bg-slate-950 text-slate-100 antialiased font-sans flex min-h-screen overflow-hidden`}
+        className={`${inter.variable} ${robotoMono.variable} bg-slate-950 text-slate-100 antialiased font-sans flex h-screen overflow-hidden`}
         suppressHydrationWarning
       >
         <AuthProvider>
           <ProjectProvider>
             <Sidebar />
-            <main className="flex-1 overflow-y-auto bg-slate-950 text-slate-100 relative flex flex-col">
+            <main className="flex-1 h-full overflow-y-auto bg-slate-950 text-slate-100 relative flex flex-col">
               {children}
             </main>
           </ProjectProvider>
