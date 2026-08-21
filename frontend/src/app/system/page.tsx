@@ -80,85 +80,129 @@ export default function SystemDoctorPage() {
                 </button>
             </div>
 
-            {/* Provider Configuration Form */}
-            <form onSubmit={saveConfiguration} className="bg-slate-900 border border-slate-800 rounded-lg p-5 space-y-5">
-                <div className="text-xs font-bold text-slate-200 uppercase flex items-center">
-                    <Cpu className="w-4 h-4 mr-2 text-indigo-400" />
-                    AI & Database Provider Settings
+            {/* Beginner Setup & Connection Wizard Card */}
+            <div className="bg-slate-900 border border-slate-800 rounded-lg p-5 space-y-5">
+                <div>
+                    <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider block">STEP 1: CHOOSE GRAPH DATABASE BACKEND</span>
+                    <h2 className="text-sm font-bold text-white mt-1">Select your preferred graph database storage</h2>
+                    <p className="text-xs text-slate-400 mt-0.5">CodeAtlas supports embedded zero-config SQLite or enterprise Neo4j graph database.</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* AI Provider */}
-                    <div className="space-y-2">
-                        <label className="text-slate-300 font-bold block">AI Provider Engine</label>
-                        <select
-                            value={aiProvider}
-                            onChange={(e) => setAiProvider(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded px-3 py-2 focus:outline-none focus:border-indigo-500"
-                        >
-                            <option value="none">None (100% Offline / Local-First Graph-RAG)</option>
-                            <option value="claude">Anthropic Claude API</option>
-                            <option value="gemini">Google Gemini API</option>
-                            <option value="openai">OpenAI (ChatGPT API)</option>
-                            <option value="ollama">Ollama (Local LLM - http://localhost:11434)</option>
-                        </select>
-                    </div>
-
-                    {/* Database Provider */}
-                    <div className="space-y-2">
-                        <label className="text-slate-300 font-bold block flex items-center">
-                            <Database className="w-3.5 h-3.5 mr-1.5 text-cyan-400" />
-                            Graph Database Backend
-                        </label>
-                        <select
-                            value={dbProvider}
-                            onChange={(e) => setDbProvider(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded px-3 py-2 focus:outline-none focus:border-cyan-500"
-                        >
-                            <option value="sqlite">SQLite Embedded (~/.codeatlas/global.db)</option>
-                            <option value="neo4j">Neo4j Graph Database (Bolt Protocol)</option>
-                        </select>
-                    </div>
-
-                    {/* API Key / Model Input */}
-                    {aiProvider !== "none" && (
-                        <div className="space-y-2 md:col-span-2 bg-slate-950 p-3 rounded border border-slate-800">
-                            <label className="text-slate-300 font-bold block flex items-center">
-                                <Key className="w-3.5 h-3.5 mr-1.5 text-amber-400" />
-                                {aiProvider.toUpperCase()} API Key / Model Settings
-                            </label>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <input
-                                    type="password"
-                                    placeholder="Enter API Key (e.g., sk-ant-api...)"
-                                    value={apiKey}
-                                    onChange={(e) => setApiKey(e.target.value)}
-                                    className="bg-slate-900 border border-slate-800 text-slate-200 rounded px-3 py-1.5 focus:outline-none focus:border-amber-500"
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="Model Name (e.g., claude-3-5-sonnet-20241022)"
-                                    value={aiModel}
-                                    onChange={(e) => setAiModel(e.target.value)}
-                                    className="bg-slate-900 border border-slate-800 text-slate-200 rounded px-3 py-1.5 focus:outline-none focus:border-amber-500"
-                                />
+                    {/* SQLite Card */}
+                    <div
+                        onClick={() => setDbProvider("sqlite")}
+                        className={`p-4 rounded-lg border cursor-pointer transition-all ${dbProvider === "sqlite" ? "bg-indigo-950/40 border-indigo-500 ring-1 ring-indigo-500" : "bg-slate-950 border-slate-800 hover:border-slate-700"}`}
+                    >
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                                <Database className="w-5 h-5 text-cyan-400" />
+                                <span className="font-bold text-white text-sm">SQLite Embedded</span>
                             </div>
+                            {dbProvider === "sqlite" && (
+                                <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] rounded font-bold">
+                                    ACTIVE
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-slate-400 text-xs mt-2">
+                            ⭐ <strong>Recommended for Beginners</strong>. Zero configuration required. Automatically creates local database inside your project folder.
+                        </p>
+                        <div className="mt-3 text-[11px] text-slate-500 font-mono">
+                            Path: ~/.codeatlas/global.db
+                        </div>
+                    </div>
+
+                    {/* Neo4j Card */}
+                    <div
+                        onClick={() => setDbProvider("neo4j")}
+                        className={`p-4 rounded-lg border cursor-pointer transition-all ${dbProvider === "neo4j" ? "bg-indigo-950/40 border-indigo-500 ring-1 ring-indigo-500" : "bg-slate-950 border-slate-800 hover:border-slate-700"}`}
+                    >
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                                <Cpu className="w-5 h-5 text-indigo-400" />
+                                <span className="font-bold text-white text-sm">Neo4j Graph DB</span>
+                            </div>
+                            {dbProvider === "neo4j" && (
+                                <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] rounded font-bold">
+                                    ACTIVE
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-slate-400 text-xs mt-2">
+                            🚀 <strong>Enterprise Graph Database</strong>. Built for large repositories with thousands of call graphs and complex relationships.
+                        </p>
+                        <div className="mt-3 text-[11px] text-slate-500 font-mono">
+                            URL: bolt://localhost:7687 (Default Auth: neo4j/codeatlas123)
+                        </div>
+                    </div>
+                </div>
+
+                {/* AI Provider Cards */}
+                <div className="pt-4 border-t border-slate-800 space-y-3">
+                    <div>
+                        <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider block">STEP 2: CHOOSE AI ENGINE PROVIDER</span>
+                        <h2 className="text-sm font-bold text-white mt-1">Connect your preferred AI Model or run 100% Offline</h2>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {/* Offline / Local Graph-RAG */}
+                        <div
+                            onClick={() => setAiProvider("none")}
+                            className={`p-3 rounded-lg border cursor-pointer ${aiProvider === "none" ? "bg-indigo-950/40 border-indigo-500" : "bg-slate-950 border-slate-800"}`}
+                        >
+                            <div className="font-bold text-white">🔒 100% Offline Local</div>
+                            <div className="text-[11px] text-slate-400 mt-1">Zero API keys, zero cloud. Pure graph-grounded evidence.</div>
+                        </div>
+
+                        {/* Claude */}
+                        <div
+                            onClick={() => setAiProvider("claude")}
+                            className={`p-3 rounded-lg border cursor-pointer ${aiProvider === "claude" ? "bg-indigo-950/40 border-indigo-500" : "bg-slate-950 border-slate-800"}`}
+                        >
+                            <div className="font-bold text-white">🧠 Anthropic Claude</div>
+                            <div className="text-[11px] text-slate-400 mt-1">Claude 3.5 Sonnet API for code reasoning.</div>
+                        </div>
+
+                        {/* Gemini */}
+                        <div
+                            onClick={() => setAiProvider("gemini")}
+                            className={`p-3 rounded-lg border cursor-pointer ${aiProvider === "gemini" ? "bg-indigo-950/40 border-indigo-500" : "bg-slate-950 border-slate-800"}`}
+                        >
+                            <div className="font-bold text-white">🌟 Google Gemini</div>
+                            <div className="text-[11px] text-slate-400 mt-1">Google Gemini API for fast code processing.</div>
+                        </div>
+                    </div>
+
+                    {aiProvider !== "none" && (
+                        <div className="bg-slate-950 p-4 rounded-lg border border-slate-800 space-y-3">
+                            <label className="text-slate-200 font-bold flex items-center">
+                                <Key className="w-4 h-4 mr-2 text-amber-400" />
+                                API Key for {aiProvider.toUpperCase()}
+                            </label>
+                            <input
+                                type="password"
+                                placeholder={`Enter your ${aiProvider.toUpperCase()} API Key...`}
+                                value={apiKey}
+                                onChange={(e) => setApiKey(e.target.value)}
+                                className="w-full bg-slate-900 border border-slate-800 text-slate-200 rounded px-3 py-2 text-xs focus:outline-none focus:border-indigo-500"
+                            />
                         </div>
                     )}
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-slate-800">
+                <div className="flex items-center justify-between pt-3 border-t border-slate-800">
                     <button
                         type="submit"
                         disabled={saving}
-                        className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded transition-colors"
+                        className="flex items-center space-x-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded transition-colors text-xs shadow-lg"
                     >
                         <Save className="w-4 h-4" />
                         <span>{saving ? "Saving..." : "Save Provider Configuration"}</span>
                     </button>
-                    {saveMessage && <span className="text-emerald-400 font-bold">{saveMessage}</span>}
+                    {saveMessage && <span className="text-emerald-400 font-bold text-xs">{saveMessage}</span>}
                 </div>
-            </form>
+            </div>
 
             {/* Docker Compose Generator Form */}
             <div className="bg-slate-900 border border-slate-800 rounded-lg p-5 space-y-4">
