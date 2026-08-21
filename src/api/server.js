@@ -161,7 +161,9 @@ async function createApiServer() {
             if (allEdges.length > 0) {
                 await neo4jStorage.saveEdges(allEdges);
             }
-            await neo4jStorage.close();
+            if (typeof neo4jStorage.close === 'function') {
+                await neo4jStorage.close();
+            }
 
             res.json({
                 success: true,

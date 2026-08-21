@@ -184,6 +184,11 @@ class Neo4jAdapter extends StorageAdapter {
         `;
         await this._cypher(cypher, { repoId });
     }
+
+    async close() {
+        // HTTP REST adapter cleanup (no-op)
+        return Promise.resolve();
+    }
 }
 
 module.exports = Neo4jAdapter;
