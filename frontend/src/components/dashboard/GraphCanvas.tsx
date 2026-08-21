@@ -91,8 +91,12 @@ function GraphCanvasInner({ onNodeClick, initialData, onReset }: { onNodeClick?:
             let label = n.data?.name || n.name || n.id;
             if (label.length > 15) label = label.substring(0, 12) + '...';
 
-            const angle = (index / Math.max(rawNodes.length - 1, 1)) * 2 * Math.PI;
-            const radius = 280;
+            const ringIndex = Math.floor(index / 12);
+            const posInRing = index % 12;
+            const itemsInRing = Math.min(12, rawNodes.length - ringIndex * 12);
+            const radius = 180 + ringIndex * 150;
+            const angle = (posInRing / Math.max(itemsInRing, 1)) * 2 * Math.PI + (ringIndex * 0.3);
+
             const position = n.position || {
                 x: center.x + radius * Math.cos(angle),
                 y: center.y + radius * Math.sin(angle)
