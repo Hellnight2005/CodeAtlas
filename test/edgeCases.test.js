@@ -42,12 +42,15 @@ test('Edge Cases - Syntax Error AST Parsing Resilience', () => {
     assert.ok(Array.isArray(extracted.edges));
 });
 
-test('Edge Cases - Regex Special Character Search Safety', () => {
+test('Edge Cases - Regex Special Character Search Safety', async () => {
     const SearchEngine = require('../src/search/SearchEngine');
-    const searchEngine = new SearchEngine();
+    const mockStorage = {
+        findNodes: async () => []
+    };
+    const searchEngine = new SearchEngine(mockStorage);
     
     // Test regex special characters query: [test] + (symbol) * ? \
-    const result = searchEngine.search('[test] + (symbol) * ? \\', []);
-    assert.ok(Array.isArray(result));
-    assert.strictEqual(result.length, 0);
+    const result = await searchEngine.search('[test] + (symbol) * ? \\', 'test-repo');
+    assert.ok(Array.isArray(result.results));
+    assert.strictEqual(result.results.length, 0);
 });
