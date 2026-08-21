@@ -435,7 +435,7 @@ context:
                     console.log(pc.bold(pc.green(`✔ CodeAtlas Control Center Dashboard: `)) + pc.cyan(`http://localhost:3001`));
                     console.log(pc.gray(`Starting Frontend Dashboard UI...\n`));
 
-                    const nextProc = spawn('npm', ['run', 'dev'], {
+                    const nextProc = spawn('npx', ['next', 'dev', '-p', '3001'], {
                         cwd: frontendDir,
                         shell: true,
                         stdio: 'inherit'
