@@ -11,6 +11,8 @@ export default function ProjectsPage() {
     const [stats, setStats] = useState<any>(null);
     const [tree, setTree] = useState<any[]>([]);
 
+    const [showAllProjects, setShowAllProjects] = useState<boolean>(false);
+
     useEffect(() => {
         if (!activeProject) return;
         const fetchProjectStats = async () => {
@@ -44,7 +46,7 @@ export default function ProjectsPage() {
             await fetch("http://localhost:5001/api/index", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ repoPath })
+                body: JSON.stringify({ repoPath, repoId: projId })
             });
 
             setIndexingStep("Completed");
@@ -149,9 +151,20 @@ export default function ProjectsPage() {
 
             {/* Registered Projects Grid */}
             <div className="space-y-3">
-                <div className="text-xs font-bold text-slate-400 uppercase">Registered Projects ({projects.length})</div>
+                <div className="flex items-center justify-between">
+                    <div className="text-xs font-bold text-slate-400 uppercase">
+                        {showAllProjects ? `Registered Projects (${projects.length})` : "Active Working Project"}
+                    </div>
+                    <button
+                        onClick={() => setShowAllProjects(!showAllProjects)}
+                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 text-xs transition-colors"
+                    >
+                        {showAllProjects ? "Show Active Only" : "Show All Registered"}
+                    </button>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {projects.map((p) => {
+                    {(showAllProjects ? projects : projects.filter(p => p.id === activeProject?.id || p.isCurrent)).map((p) => {
                         const isIndexing = indexingId === p.id;
                         return (
                             <div key={p.id} className="bg-slate-900 border border-slate-800 rounded-lg p-4 space-y-3">

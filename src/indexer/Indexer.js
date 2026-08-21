@@ -13,6 +13,7 @@ class Indexer {
     }
 
     async indexRepository(repoPath = process.cwd(), repoId = 'local-repo') {
+        repoPath = path.resolve(repoPath).replace(/\\/g, '/');
         const startTime = Date.now();
         this.logger.info('index_start', `Starting repository indexing for ${repoId} at ${repoPath}`, { repoId });
 
