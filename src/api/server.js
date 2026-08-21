@@ -215,15 +215,34 @@ async function createApiServer() {
 
     app.get('/api/graph/filter', async (req, res) => {
         try {
-            const { repo, type, path, limit } = req.query;
-            const repoId = repo || config.repository.id;
-            const nodes = await storage.findNodes({
+            const { repo, type, path: filterPath, limit } = req.query;
+            let repoId = repo || config.repository.id;
+            let nodes = await storage.findNodes({
                 repoId,
                 label: type,
-                name: path,
-                filePath: path,
+                name: filterPath,
+                filePath: filterPath,
                 limit: parseInt(limit || '100', 10)
             });
+
+            if (nodes.length === 0) {
+                const GlobalRegistry = require('../storage/GlobalRegistry');
+                const registry = new GlobalRegistry();
+                await registry.initialize();
+                const currentProj = await registry.registerProject(process.cwd());
+                await registry.close();
+
+                if (currentProj && currentProj.id !== repoId) {
+                    repoId = currentProj.id;
+                    nodes = await storage.findNodes({
+                        repoId,
+                        label: type,
+                        name: filterPath,
+                        filePath: filterPath,
+                        limit: parseInt(limit || '100', 10)
+                    });
+                }
+            }
 
             const nodeIds = nodes.map(n => n.id);
             let edges = [];
