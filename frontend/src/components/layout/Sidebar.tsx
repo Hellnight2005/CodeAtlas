@@ -87,10 +87,11 @@ export default function Sidebar() {
                 <button
                     onClick={() => setProjectDropdown(!projectDropdown)}
                     className="w-full bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 rounded px-3 py-2 flex items-center justify-between transition-colors text-left"
+                    suppressHydrationWarning
                 >
-                    <div className="truncate">
-                        <div className="font-bold text-slate-100 truncate text-xs">{activeProject ? activeProject.name : "Select Project"}</div>
-                        <div className="text-[10px] text-emerald-400 font-mono flex items-center mt-0.5">
+                    <div className="truncate" suppressHydrationWarning>
+                        <div className="font-bold text-slate-100 truncate text-xs" suppressHydrationWarning>{activeProject ? activeProject.name : "Select Project"}</div>
+                        <div className="text-[10px] text-emerald-400 font-mono flex items-center mt-0.5" suppressHydrationWarning>
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
                             {activeProject?.status || "Ready"}
                         </div>

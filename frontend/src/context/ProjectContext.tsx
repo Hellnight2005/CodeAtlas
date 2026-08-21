@@ -31,6 +31,11 @@ export const ProjectProvider = ({ children }: { children: React.ReactNode }) => 
     const [projects, setProjects] = useState<Project[]>([]);
     const [activeProject, setActiveProject] = useState<Project | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const handleSetActiveProject = (project: Project) => {
         setActiveProject(project);
