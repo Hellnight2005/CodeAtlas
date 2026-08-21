@@ -6,7 +6,6 @@
     <a href="#-quick-start"><img src="https://img.shields.io/badge/Node.js-v20%2B-green?style=for-the-badge&logo=node.js" alt="Node.js"></a>
     <a href="#-mcp-integration"><img src="https://img.shields.io/badge/MCP-Native-indigo?style=for-the-badge&logo=ai" alt="MCP"></a>
     <a href="#-100-local-privacy"><img src="https://img.shields.io/badge/Privacy-100%25_Local-emerald?style=for-the-badge" alt="Privacy"></a>
-    <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge" alt="License"></a>
   </p>
 
   <h3><em>"Stop making AI read the entire codebase. Make the graph tell the AI where to look."</em></h3>
@@ -158,6 +157,6 @@ Now ask your AI Agent natural questions:
 
 ---
 
-## 📄 License & Community
+## 👥 Community & Contributions
 
-Released under the [Apache License 2.0](LICENSE). Built for developers and AI pair programmers worldwide.
+Built for developers and AI pair programmers worldwide. Contributions and issues are welcome!
