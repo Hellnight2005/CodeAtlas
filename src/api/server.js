@@ -126,9 +126,17 @@ async function createApiServer() {
         res.json({ status: 'ok', provider: config.graph.provider });
     });
 
+    app.get('/api/storage/migrate-to-neo4j', (req, res) => {
+        res.json({
+            status: 'ok',
+            message: 'Neo4j Migration Endpoint Ready. Send a POST request to sync local SQLite graph data into your Neo4j Docker container.',
+            endpoint: 'POST http://localhost:5001/api/storage/migrate-to-neo4j'
+        });
+    });
+
     app.post('/api/storage/migrate-to-neo4j', async (req, res) => {
         try {
-            const neo4jUrl = req.body.neo4jUrl || config.graph.neo4jUrl || 'bolt://localhost:7687';
+            const neo4jUrl = req.body.neo4jUrl || config.graph.neo4jUrl || 'http://localhost:7474';
             const neo4jAuth = req.body.neo4jAuth || config.graph.neo4jAuth || 'neo4j/codeatlas123';
             const Neo4jAdapter = require('../storage/Neo4jAdapter');
             const neo4jStorage = new Neo4jAdapter({ url: neo4jUrl, auth: neo4jAuth });

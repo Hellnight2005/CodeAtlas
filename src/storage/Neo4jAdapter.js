@@ -4,8 +4,17 @@ const StorageAdapter = require('./StorageAdapter');
 class Neo4jAdapter extends StorageAdapter {
     constructor(options = {}) {
         super();
-        this.baseUrl = options.url || process.env.NEO4J_BASE_URL || 'http://localhost:7474';
-        const authStr = options.auth || process.env.NEO4J_AUTH || 'neo4j:password';
+        let rawUrl = options.url || process.env.NEO4J_BASE_URL || 'http://localhost:7474';
+        if (rawUrl.startsWith('bolt://')) {
+            rawUrl = rawUrl.replace('bolt://', 'http://').replace(':7687', ':7474');
+        }
+        if (rawUrl.startsWith('neo4j://')) {
+            rawUrl = rawUrl.replace('neo4j://', 'http://').replace(':7687', ':7474');
+        }
+        this.baseUrl = rawUrl;
+
+        let authStr = options.auth || process.env.NEO4J_AUTH || 'neo4j/codeatlas123';
+        authStr = authStr.replace('/', ':');
         this.authHeader = 'Basic ' + Buffer.from(authStr).toString('base64');
         this.dbName = options.database || 'neo4j';
     }
