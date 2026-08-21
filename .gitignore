@@ -13,6 +13,7 @@ frontend/out/
 *.log
 *.sqlite
 *.db
+DATE.md
 
 # Environment & Local Overrides
 .env
