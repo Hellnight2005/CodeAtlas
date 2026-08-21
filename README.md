@@ -1,69 +1,105 @@
-# CodeAtlas
+# 🗺️ CodeAtlas — Local-First Graph-Native Code Intelligence Engine for AI Agents
 
-**CodeAtlas** is a comprehensive tool designed to visualize and explore the architecture of your codebase. By turning flat file structures into interactive dependency graphs, it helps developers understand complex projects faster.
+> **Stop making AI read the entire codebase. Make the graph tell the AI where to look.**
 
-## 🚀 Why CodeAtlas?
-Navigating large codebases can be overwhelming. CodeAtlas parses your repository, understands the relationships between files (imports, classes, functions), and presents them in an interactive graph. Whether you are onboarding new developers or refactoring legacy code, CodeAtlas gives you the map you need.
+CodeAtlas is an open-source, local-first graph-native code intelligence engine. It parses source code repositories into a structured knowledge graph (Neo4j + SQLite), connects with AI Agents (Cursor, Antigravity, Claude Desktop) via the Model Context Protocol (MCP), and delivers graph-grounded evidence with zero cloud dependence.
 
-## 🏗️ Architecture & Pipeline
-CodeAtlas is built as a microservices architecture:
+---
 
-1.  **Frontend**: A Next.js application that provides the dashboard and graph visualization.
-2.  **GitAuth Service**: Manages specific GitHub authentication, user sessions, and triggers the initial repository sync.
-3.  **Repo Parser Service**: The heavy lifter that consumes file events, parses code to generate ASTs (Abstract Syntax Trees), and builds the relationship graph.
+## 🌟 Key Highlights
 
-### The Pipeline Flow
-1.  **User Selects Repo**: The user picks a repository in the Frontend.
-2.  **Sync Trigger**: Frontend calls **GitAuth**, which fetches the file tree from GitHub and pushes events to **Kafka**.
-3.  **Processing**: **Repo Parser** consumes these events, fetches raw code, and generates ASTs.
-4.  **Graph Generation**: The parsed data is structured into nodes and edges (saved to databases like Neo4j/MySQL) and returned to the Frontend for rendering.
+- 🧠 **Graph-RAG Retrieval Pipeline**: Combines lexical concept search with Neo4j 6-factor reranking to find exact source locations (`file`, `startLine`, `endLine`).
+- 🤖 **8 Progressive MCP Tools**: Exposes `codeatlas_search`, `codeatlas_get_context`, `codeatlas_find_symbol`, `codeatlas_get_callers`, `codeatlas_get_callees`, `codeatlas_get_dependencies`, `codeatlas_analyze_impact`, `codeatlas_trace_execution`.
+- ⚡ **Zero-Friction Local Experience**: Runs 100% offline on your machine (`~/.codeatlas/`). Zero telemetry, zero external AI API required.
+- 🚀 **Parallel Bounded Indexer**: Multi-core CPU parallel AST extraction with fast SHA-256 content hash skipping.
+- 📊 **Control Center & Full-Screen Canvas**: Next.js 16 interactive dashboard with tabbed node inspector, execution tracing, and keyboard navigation.
 
-## 📂 Project Structure
-```
-CodeAtlas-
-├── frontend/         # Next.js User Interface
-├── git_auth/         # Authentication & Sync Orchestrator
-├── repo_parser/      # AST Parsing & Analysis Engine
-├── uml_diagrams/     # Architecture diagrams (PlantUML)
-└── README.md         # This file
+---
+
+## 🚀 Quick Start
+
+### 1. Installation
+```bash
+git clone https://github.com/Hellnight2005/CodeAtlas-.git
+cd CodeAtlas-
+npm install
+npm link
 ```
 
-## 🛠️ Usage
+### 2. Run CodeAtlas on Any Project
+Navigate to any repository on your machine:
+```bash
+cd /path/to/your/project
+codeatlas init
+codeatlas index .
+codeatlas serve
+```
+- **Dashboard UI**: [http://localhost:3001](http://localhost:3001)
+- **REST API**: [http://localhost:5001](http://localhost:5001)
 
-### Prerequisites
-- [Node.js](https://nodejs.org/) (v20+)
-- [Docker](https://www.docker.com/) (recommended for running databases like Kafka, MySQL, Redis, Neo4j)
+---
 
-### Quick Start
-Each service is independently managed. Please refer to their respective READMEs for detailed setup:
+## 🔌 Connecting to AI Agents via MCP
 
-- [**Frontend Instructions**](./frontend/README.md)
-- [**GitAuth Service Instructions**](./git_auth/README.md)
-- [**Repo Parser Instructions**](./repo_parser/README.md)
+Add CodeAtlas to your AI Agent (`mcp_config.json`):
 
-### Running Locally (Manual)
-1.  Start your infrastructure (Kafka, MySQL, Redis, Mongo).
-2.  Start the **GitAuth** service (Port 3000/Default).
-3.  Start the **Repo Parser** service (Port 5001).
-4.  Start the **Frontend** (Port 3001).
-5.  Navigate to `http://localhost:3001` and login with GitHub.
+```json
+{
+  "mcpServers": {
+    "codeatlas": {
+      "command": "codeatlas",
+      "args": ["mcp", "start"],
+      "cwd": "/path/to/your/project"
+    }
+  }
+}
+```
 
-## 🤝 Contributing
-We welcome contributions to CodeAtlas! Whether it's reporting a bug, suggesting a feature, or writing code, your help is appreciated.
+Now ask your AI Agent natural questions:
+- *"How does the upload pipeline work?"*
+- *"What happens after POST /upload?"*
+- *"If I modify `directUpload.js`, what components are impacted?"*
 
-### 🐛 Reporting Issues
-If you find a bug or have a feature request, please check the [existing issues](https://github.com/Hellnight2005/CodeAtlas-/issues) first to see if it has already been reported.
+---
 
-If not, please open a new issue using one of our templates:
-- **[Bug Report](https://github.com/Hellnight2005/CodeAtlas-/issues/new?template=bug_report.md)**: For reporting errors or unexpected behavior.
-- **[Feature Request](https://github.com/Hellnight2005/CodeAtlas-/issues/new?template=feature_request.md)**: For proposing new features or improvements.
+## 📊 Architecture
 
-### 🛠️ Development
-Please check the individual service directories for specific setup and contribution guidelines:
-- [Frontend Guide](./frontend/README.md)
-- [GitAuth Guide](./git_auth/README.md)
-- [Repo Parser Guide](./repo_parser/README.md)
+```text
+User Question → AI Agent → CodeAtlas MCP (stdio)
+                              │
+                    ┌─────────┴─────────┐
+                    ▼                   ▼
+           Concept Normalization    Candidate Search
+                    │                   │
+                    └─────────┬─────────┘
+                              ▼
+                     Neo4j Graph Expansion
+                              │
+                              ▼
+                     6-Factor Reranking
+                              │
+                              ▼
+                   Token-Budgeted Context
+                              │
+                              ▼
+                   AI Agent Grounded Answer
+```
 
-## 📚 Documentation & Blog
-Follow our journey and read detailed documentation in our **Document Week Blog**:
-- [**CodeAtlas Series on Hashnode**](https://projectlog.hashnode.dev/series/code-atlas)
+---
+
+## 💻 CLI Commands
+
+```bash
+codeatlas start           # One-command environment start (API + Dashboard + MCP)
+codeatlas index .         # Index repository into structural graph
+codeatlas watch           # File watcher with incremental indexing
+codeatlas doctor          # Diagnose Node.js, SQLite, Neo4j, and Search engine
+codeatlas benchmark       # Run performance latency & retrieval quality tests
+codeatlas reset           # Reset project graph safely (source code untouched)
+```
+
+---
+
+## 📄 License
+
+MIT © [CodeAtlas Contributors](LICENSE)

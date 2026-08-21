@@ -1,8 +1,6 @@
-
 "use client";
 
-import React, { useCallback, useEffect } from 'react';
-import Link from 'next/link';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import ReactFlow, {
     MiniMap,
     Controls,
@@ -11,28 +9,25 @@ import ReactFlow, {
     useEdgesState,
     addEdge,
     Connection,
-    Edge,
     Node,
     BackgroundVariant,
+    useReactFlow,
+    ReactFlowProvider
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { RotateCcw, Info, ArrowLeft } from "lucide-react"; // Add Import
+import { RotateCcw, Info, Search, Filter, ZoomIn, ZoomOut, Maximize2, Layers, ShieldAlert, Target } from "lucide-react";
 
-// Neo4j-style Constants
-const NEO_BLUE = '#57C7E3';
-const NEO_ORANGE = '#F79767';
-// Color Palette by Node Type
 const TYPE_COLORS: Record<string, string> = {
-    'Repository': '#004de6', // Vibrant Blue
-    'File': '#F2A2B3',       // Pink
-    'Module': '#F4BC42',     // Yellow/Orange
-    'Function': '#5BB0B5',   // Teal
-    'Class': '#DA717A',      // Red/Salmon (Est.)
-    'Variable': '#A0B06B',   // Olive
-    'Export': '#97B373',     // Sage Green
-    'Interface': '#26A69A',  // Teal
+    'Repository': '#3B82F6', // Blue
+    'File': '#EC4899',       // Pink
+    'Module': '#F59E0B',     // Amber/Yellow
+    'Function': '#10B981',   // Emerald/Green
+    'Class': '#EF4444',      // Red
+    'Interface': '#8B5CF6',  // Purple
+    'Variable': '#6366F1',   // Indigo
 };
-const DEFAULT_COLOR = '#A5ABB6'; // Grey
+
+const DEFAULT_COLOR = '#94A3B8';
 
 const NEO_NODE_STYLE = {
     borderRadius: '50%',
@@ -41,505 +36,272 @@ const NEO_NODE_STYLE = {
     alignItems: 'center',
     color: '#fff',
     border: 'none',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-    fontFamily: 'system-ui, sans-serif',
+    boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3)',
+    fontFamily: 'monospace',
     fontSize: '10px',
     fontWeight: 'bold',
     textAlign: 'center' as const
 };
 
-// Helper: Get Color by Label
 const getNodeColor = (label?: string) => {
     if (!label) return DEFAULT_COLOR;
     return TYPE_COLORS[label] || DEFAULT_COLOR;
 };
 
-export default function GraphCanvas({ onNodeClick, initialData, onReset }: { onNodeClick: (node: any) => void, initialData?: any, onReset?: () => void }) {
+function GraphCanvasInner({ onNodeClick, initialData, onReset }: { onNodeClick?: (node: any) => void, initialData?: any, onReset?: () => void }) {
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+    const reactFlowInstance = useReactFlow();
 
-    // Logic to generate graph from initialData (Neo4j Style)
+    // Graph Controls State
+    const [depth, setDepth] = useState<number>(2);
+    const [nodeLimit, setNodeLimit] = useState<number>(250);
+    const [searchQuery, setSearchQuery] = useState<string>('');
+    const [showLegend, setShowLegend] = useState(false);
+    const [showControlsPanel, setShowControlsPanel] = useState(false);
+    const [isTruncated, setIsTruncated] = useState(false);
+    const [focusNodeId, setFocusNodeId] = useState<string | null>(null);
+
+    // Filter toggles
+    const [selectedNodeTypes, setSelectedNodeTypes] = useState<Record<string, boolean>>({
+        'File': true,
+        'Function': true,
+        'Class': true,
+        'Interface': true,
+        'Module': true
+    });
+
+    const [selectedRelTypes, setSelectedRelTypes] = useState<Record<string, boolean>>({
+        'CALLS': true,
+        'IMPORTS': true,
+        'DEPENDS_ON': true,
+        'EXTENDS': true,
+        'REFERENCES': true
+    });
+
     const generateGraph = useCallback(() => {
-        if (!initialData) return;
+        if (!initialData || !initialData.nodes) return;
 
-        // Identify Repository Node (Root)
-        const repoNode = initialData.nodes.find((n: any) => n.label === 'Repository' || n.data.fileCount !== undefined);
         const center = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+        const rawNodes = initialData.nodes.slice(0, nodeLimit);
+        setIsTruncated(initialData.nodes.length > nodeLimit);
 
-        const mappedNodes = initialData.nodes?.map((n: any, index: number) => {
-            const isRepo = n.label === 'Repository' || n.data.fileCount !== undefined;
+        const mappedNodes = rawNodes.map((n: any, index: number) => {
+            const isRepo = n.label === 'Repository';
+            let label = n.data?.name || n.name || n.id;
+            if (label.length > 15) label = label.substring(0, 12) + '...';
 
-            // Label Logic
-            let label = n.data.name;
-            if (!label && n.data.path) label = n.data.path.split('/').pop();
-            if (label && label.includes('/')) label = label.split('/').pop(); // Remove owner prefix if present
-            if (!label) label = n.id;
-
-            // Truncate for circle fitting
-            // Truncate for circle fitting
-            if (!isRepo && label.length > 12) label = label.substring(0, 10) + '...';
-            // if (isRepo && n.data.fileCount) label = `${label} \n(${n.data.fileCount})`; // User wants simple name match
-
-            // Layout: Radial / Concentric
-            let position = n.position || { x: center.x, y: center.y };
-            if (!n.position && repoNode && n.id !== repoNode.id) {
-                const totalNodes = initialData.nodes.length - 1;
-                const angle = ((index) / totalNodes) * 2 * Math.PI;
-                const radius = 300;
-                position = {
-                    x: center.x + radius * Math.cos(angle),
-                    y: center.y + radius * Math.sin(angle)
-                };
-            }
+            const angle = (index / Math.max(rawNodes.length - 1, 1)) * 2 * Math.PI;
+            const radius = 280;
+            const position = n.position || {
+                x: center.x + radius * Math.cos(angle),
+                y: center.y + radius * Math.sin(angle)
+            };
 
             return {
                 id: n.id,
                 position,
-                data: { ...n.data, label },
+                data: { ...n.data, label, fullNode: n },
                 style: {
                     ...NEO_NODE_STYLE,
-                    width: isRepo ? 100 : 70,
-                    height: isRepo ? 100 : 70,
+                    width: isRepo ? 90 : 65,
+                    height: isRepo ? 90 : 65,
                     backgroundColor: getNodeColor(n.label),
-                    zIndex: isRepo ? 10 : 1,
-                    fontSize: isRepo ? '12px' : '9px',
-                    overflow: 'hidden',
-                    whiteSpace: 'pre-wrap' as const, // For newlines
+                    fontSize: isRepo ? '11px' : '9px',
+                    opacity: focusNodeId && focusNodeId !== n.id ? 0.4 : 1,
+                    border: focusNodeId === n.id ? '3px solid #3B82F6' : 'none'
                 }
             };
-        }) || [];
+        });
 
-        const mappedEdges = initialData.edges?.map((e: any) => ({
-            id: e.id,
-            source: e.source,
-            target: e.target,
-            type: 'default', // Straight lines for Neo4j look
-            style: { stroke: '#A5ABB6', strokeWidth: 1 },
-            animated: false
-        })) || [];
+        const mappedEdges = (initialData.edges || []).map((e: any) => {
+            const relType = e.type || 'CALLS';
+            let strokeColor = '#64748B'; // slate-500
+            if (relType === 'IMPORTS') strokeColor = '#3B82F6'; // blue
+            if (relType === 'CALLS') strokeColor = '#10B981';   // emerald
+            if (relType === 'DEFINES') strokeColor = '#EC4899'; // pink
+            if (relType === 'EXTENDS') strokeColor = '#8B5CF6'; // purple
+
+            return {
+                id: e.id,
+                source: e.source,
+                target: e.target,
+                label: relType,
+                type: 'default',
+                style: { stroke: strokeColor, strokeWidth: 2 },
+                animated: relType === 'CALLS' || relType === 'IMPORTS'
+            };
+        });
 
         setNodes(mappedNodes);
         setEdges(mappedEdges);
-    }, [initialData, setNodes, setEdges]);
+    }, [initialData, nodeLimit, focusNodeId, setNodes, setEdges]);
 
-    // Initial Load
     useEffect(() => {
         generateGraph();
     }, [generateGraph]);
 
-    // Handle Reset
-    const handleReset = () => {
-        if (onReset) {
-            onReset();
-        } else {
-            generateGraph();
-        }
-    }
-
-    const [selectedNodeId, setSelectedNodeId] = React.useState<string | null>(null);
-
-    // Logic to generate graph from initialData (Neo4j Style)
-    // ... (generateGraph logic remains same) ...
-
-    // Handle Inspection (Single Click) - Opens/Closes Side Panel
     const handleNodeClick = (event: React.MouseEvent, node: Node) => {
-        if (selectedNodeId === node.id) {
-            // Toggle OFF
-            setSelectedNodeId(null);
-            onNodeClick(null);
-        } else {
-            // Toggle ON
-            setSelectedNodeId(node.id);
-            onNodeClick(node);
-        }
+        if (onNodeClick) onNodeClick(node.data?.fullNode || node);
     };
 
-    // Handle Node Expansion (Double Click)
-    const handleNodeDoubleClick = async (event: React.MouseEvent, node: Node) => {
-        // TOGGLE LOGIC: If already expanded, collapse it.
-        if (node.data.expanded) {
-            // 1. Find all descendants recursively
-            const getDescendants = (parentId: string, allNodes: Node[]): string[] => {
-                const children = allNodes.filter(n => n.data.parentId === parentId);
-                let ids = children.map(c => c.id);
-                children.forEach(c => {
-                    ids = [...ids, ...getDescendants(c.id, allNodes)];
-                });
-                return ids;
-            };
-
-            const descendantIds = getDescendants(node.id, nodes);
-            const idsToRemove = new Set(descendantIds);
-
-            // 2. Remove Nodes
-            setNodes((nds) => nds.filter(n => {
-                if (n.id === node.id) {
-                    // Reset parent state
-                    n.data.expanded = false;
-                    n.style = { ...n.style, opacity: 1 }; // Reset opacity
-                    return true;
-                }
-                return !idsToRemove.has(n.id);
-            }));
-
-            // 3. Remove Edges connected to removed nodes
-            setEdges((eds) => eds.filter(e => !idsToRemove.has(e.source) && !idsToRemove.has(e.target)));
-
-            return; // Stop here
-        }
-
-        // EXPAND LOGIC
-        // Visual feedback
-        setNodes((nds) => nds.map(n => {
-            if (n.id === node.id) {
-                // Show loading state or highlight
-                return { ...n, style: { ...n.style, opacity: 0.7 } };
-            }
-            return n;
-        }));
-
-        try {
-            const response = await fetch(`/api/graph/expand?nodeId=${node.id}`);
-            const data = await response.json();
-
-            if (data.nodes && data.nodes.length > 0) {
-                // Simple force layout for new nodes
-                const newNodes = data.nodes.map((n: any, index: number) => {
-                    const totalNew = data.nodes.length;
-                    const angle = (index / totalNew) * 2 * Math.PI;
-                    const radius = 200; // Smaller radius for expansion
-                    const x = node.position.x + radius * Math.cos(angle);
-                    const y = node.position.y + radius * Math.sin(angle);
-
-                    // derive smart label
-                    let computedLabel = n.data.name;
-                    if (!computedLabel && n.data.path) computedLabel = n.data.path.split('/').pop();
-                    if (!computedLabel) computedLabel = n.label || n.id;
-                    if (computedLabel.length > 12) computedLabel = computedLabel.substring(0, 10) + '...';
-
-                    return {
-                        id: n.id,
-                        position: { x, y },
-                        data: { ...n.data, label: computedLabel, parentId: node.id }, // Track lineage
-                        style: {
-                            ...NEO_NODE_STYLE,
-                            width: 70,
-                            height: 70,
-                            backgroundColor: getNodeColor(n.label),
-                            fontSize: '9px',
-                            overflow: 'hidden',
-                            whiteSpace: 'pre-wrap' as const
-                        }
-                    };
-                });
-
-                const newEdges = data.edges.map((e: any) => ({
-                    id: e.id,
-                    source: e.source,
-                    target: e.target,
-                    style: { stroke: '#A5ABB6', strokeWidth: 1 },
-                    animated: false
-                }));
-
-                // RE-READ: We need 'nodes' to check for duplicates. 
-                // Using 'setNodes(nds => ...)' means we access latest nodes.
-                // But we lose 'idRemap' for the edges.
-                // 
-                // FIX: use 'nodes' from component scope for the Check.
-                // Is 'nodes' from useNodesState()? Yes or passed prop?
-                // It's not passed as prop. "const [nodes, setNodes] = ... }"
-                // So I can use 'nodes' directly!
-
-                // Optimized Logic:
-                const currentNodes = nodes; // Snapshot at start of async
-                // BUT 'updatedParent' modifies 'node' (opacity).
-                // Let's assume content (IDs/Paths) doesn't race.
-
-                const existingPathMap = new Map();
-                currentNodes.forEach(n => {
-                    if (n.data?.path) existingPathMap.set(n.data.path, String(n.id));
-                });
-
-                const existingIds = new Set(currentNodes.map(n => String(n.id)));
-                const idRemap = new Map();
-
-                const uniqueNewNodes = newNodes.filter((n: any) => {
-                    const sId = String(n.id);
-                    if (existingIds.has(sId)) return false;
-                    if (n.data?.path && existingPathMap.has(n.data.path)) {
-                        idRemap.set(sId, existingPathMap.get(n.data.path));
-                        return false;
-                    }
-                    return true;
-                });
-
-                // Update Nodes
-                setNodes((nds) => {
-                    const updatedParent = nds.map(n => n.id === node.id ? {
-                        ...n,
-                        data: { ...n.data, expanded: true },
-                        style: { ...n.style, opacity: 1 }
-                    } : n);
-                    return [...updatedParent, ...uniqueNewNodes];
-                });
-
-                // Update Edges
-                setEdges((eds) => {
-                    const existingEdgeIds = new Set(eds.map(e => String(e.id)));
-
-                    const processedNewEdges = newEdges.map((e: any) => {
-                        let source = String(e.source);
-                        let target = String(e.target);
-
-                        // Remap if needed
-                        if (idRemap.has(source)) source = idRemap.get(source);
-                        if (idRemap.has(target)) target = idRemap.get(target);
-
-                        return { ...e, source, target };
-                    }).filter((e: any) => !existingEdgeIds.has(String(e.id)));
-
-                    return [...eds, ...processedNewEdges];
-                });
-            } else {
-                // No new nodes found
-                setNodes((nds) => nds.map(n => n.id === node.id ? { ...n, style: { ...n.style, opacity: 1 } } : n));
-            }
-        } catch (err) {
-            console.error("Failed to expand:", err);
-            setNodes((nds) => nds.map(n => n.id === node.id ? { ...n, style: { ...n.style, opacity: 1 } } : n));
+    const handleFocusMode = (nodeId: string) => {
+        setFocusNodeId(focusNodeId === nodeId ? null : nodeId);
+        const node = nodes.find(n => n.id === nodeId);
+        if (node) {
+            reactFlowInstance.setCenter(node.position.x, node.position.y, { zoom: 1.5, duration: 800 });
         }
     };
-
-    const onConnect = useCallback((params: Connection) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
-
-
-
-
-    // Filter State
-    const [searchType, setSearchType] = React.useState<string>('');
-    const [showFilterMenu, setShowFilterMenu] = React.useState(false);
-    const [showLegend, setShowLegend] = React.useState(false);
-    const searchInputRef = React.useRef<HTMLInputElement>(null);
-
-    // Reuseable Search Function
-    const performSearch = async (query: string, type: string) => {
-        // Find repo name from current nodes (hacky but works if repo node exists)
-        const repoNode = nodes.find(n => n.data.fileCount !== undefined);
-        const repoName = repoNode?.data?.name || 'cognidesk';
-
-        console.log(`[Search] Query: "${query}", Type: "${type}", Repo: "${repoName}"`);
-
-        try {
-            let url = `/api/graph/filter?repo=${repoName}&path=${query}`;
-            if (type) url += `&type=${type}`;
-
-            console.log(`[Search] Fetching: ${url}`);
-
-            const res = await fetch(url);
-            const data = await res.json();
-            console.log(`[Search] Result:`, data);
-
-            if (data.nodes && data.nodes.length > 0) {
-                console.log(`[Search] Found ${data.nodes.length} nodes. Clearing graph and setting nodes.`);
-                // ISOLATION MODE: Replace all nodes with search result
-                const searchNodes = data.nodes.map((n: any, i: number) => {
-                    // Grid Layout
-                    const col = i % 5;
-                    const row = Math.floor(i / 5);
-                    const offsetX = (col - 2) * 140;
-                    const offsetY = row * 160;
-
-                    const center = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
-
-                    const pathStr = n.data.path || n.path || '';
-                    let name = n.data.name || n.name || n.label || n.id;
-                    if (name === 'File' && pathStr) name = pathStr.split('/').pop();
-
-                    return {
-                        id: n.id,
-                        position: { x: center.x + offsetX, y: center.y + offsetY },
-                        data: {
-                            ...n.data,
-                            label: (
-                                <div className="relative flex flex-col items-center overflow-visible">
-                                    {/* Node Circle */}
-                                    <div
-                                        className="flex items-center justify-center rounded-full shadow-lg"
-                                        style={{
-                                            width: '80px',
-                                            height: '80px',
-                                            backgroundColor: getNodeColor(n.label || 'File'),
-                                            border: '2px solid rgba(255,255,255,0.2)'
-                                        }}
-                                    >
-                                        <div className="font-bold text-white text-[10px] text-center p-1 break-all leading-tight">
-                                            {name}
-                                        </div>
-                                    </div>
-
-                                    {/* Path Display (Outside/Below) */}
-                                    <div className="absolute top-full mt-2 bg-slate-800/90 text-slate-300 text-[10px] px-2 py-1 rounded border border-slate-700 whitespace-nowrap shadow-sm z-50">
-                                        {pathStr}
-                                    </div>
-                                </div>
-                            )
-                        },
-                        style: {
-                            width: 'auto',
-                            height: 'auto',
-                            backgroundColor: 'transparent',
-                            border: 'none',
-                            boxShadow: 'none',
-                        }
-                    };
-                });
-
-                setNodes(searchNodes);
-                setEdges([]);
-            } else {
-                console.log(`[Search] No nodes found.`);
-            }
-        } catch (err) {
-            console.error("Search failed:", err);
-        }
-    };
-
-    // Helper: Search Graph (Key Handler)
-    const handleSearch = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
-            const query = (e.target as HTMLInputElement).value;
-            if (!query && !searchType) return;
-            performSearch(query, searchType);
-        }
-    };
-
-    // Filter Change Handler (Auto-Trigger)
-    const handleFilterChange = (type: string) => {
-        setSearchType(type);
-        setShowFilterMenu(false);
-        // Auto-search if query exists OR if type is selected (allowing empty query for type filtering)
-        const currentQuery = searchInputRef.current?.value || '';
-        performSearch(currentQuery, type);
-    };
-
 
     return (
-        <div className="w-full h-full bg-white dark:bg-black relative">
-            {/* Top Left: Back to Dashboard */}
-            <Link
-                href="/dashboard"
-                className="absolute top-4 left-4 z-50 flex items-center justify-center p-2 bg-white/80 dark:bg-black/80 backdrop-blur border border-sharp rounded-full shadow-sm hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
-                title="Back to Dashboard"
-            >
-                <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-            </Link>
-
-            {/* Top Bar: Search with Filter */}
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 w-[500px] flex items-center space-x-2">
-                {/* Custom Filter Dropdown */}
+        <div className="w-full h-full bg-slate-950 relative select-none font-mono text-xs overflow-hidden">
+            {/* Control Toolbar */}
+            <div className="absolute top-4 left-4 z-20 flex items-center space-x-2 bg-slate-900/90 border border-slate-800 backdrop-blur px-3 py-2 rounded-lg shadow-xl text-slate-200">
                 <div className="relative">
-                    <button
-                        onClick={() => setShowFilterMenu(!showFilterMenu)}
-                        className="px-4 py-2 bg-white/90 dark:bg-black/90 backdrop-blur border border-sharp rounded-full shadow-sm text-sm font-mono flex items-center space-x-2 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
-                    >
-                        <span style={{ color: searchType ? TYPE_COLORS[searchType] : 'inherit' }}>
-                            {searchType || 'Filter'}
-                        </span>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                    </button>
-
-                    {showFilterMenu && (
-                        <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-black border border-sharp rounded-lg shadow-xl py-2 z-50">
-                            <div
-                                className="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-900 cursor-pointer text-sm font-mono"
-                                onClick={() => handleFilterChange('')}
-                            >
-                                All
-                            </div>
-                            {Object.keys(TYPE_COLORS).map(type => (
-                                <div
-                                    key={type}
-                                    className="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-900 cursor-pointer text-sm font-mono flex items-center space-x-2"
-                                    onClick={() => handleFilterChange(type)}
-                                >
-                                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: TYPE_COLORS[type] }}></span>
-                                    <span>{type}</span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-2 text-slate-500" />
+                    <input
+                        type="text"
+                        placeholder="Search symbols..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="bg-slate-950 border border-slate-700/80 rounded pl-8 pr-3 py-1 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 text-xs w-48"
+                    />
                 </div>
 
-                <input
-                    ref={searchInputRef}
-                    type="text"
-                    placeholder={`Search ${searchType ? searchType + 's' : 'code'}...`}
-                    className="flex-grow px-4 py-2 rounded-full border border-sharp bg-white/90 dark:bg-black/90 backdrop-blur shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-mono"
-                    onKeyDown={handleSearch}
-                />
-            </div>
+                <div className="h-4 w-px bg-slate-800"></div>
 
-            {/* Top Right: Reset & Counter */}
-            <div className="absolute top-4 right-4 z-10 flex items-center space-x-2">
+                <div className="flex items-center space-x-1">
+                    <span className="text-[10px] text-slate-500 font-bold">DEPTH:</span>
+                    {[1, 2, 3].map(d => (
+                        <button
+                            key={d}
+                            onClick={() => setDepth(d)}
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${depth === d ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-750"}`}
+                        >
+                            {d}
+                        </button>
+                    ))}
+                </div>
+
+                <div className="h-4 w-px bg-slate-800"></div>
+
+                <div className="flex items-center space-x-1">
+                    <span className="text-[10px] text-slate-500 font-bold">LIMIT:</span>
+                    {[100, 250, 500].map(l => (
+                        <button
+                            key={l}
+                            onClick={() => setNodeLimit(l)}
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${nodeLimit === l ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-750"}`}
+                        >
+                            {l}
+                        </button>
+                    ))}
+                </div>
+
+                <div className="h-4 w-px bg-slate-800"></div>
+
                 <button
-                    onClick={handleReset}
-                    className="flex items-center justify-center p-2 bg-white/80 dark:bg-black/80 backdrop-blur border border-sharp rounded shadow-sm hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
-                    title="Reset Graph"
+                    onClick={() => setShowControlsPanel(!showControlsPanel)}
+                    className="p-1.5 bg-slate-800 hover:bg-slate-750 text-slate-300 rounded border border-slate-700"
+                    title="Toggle Filter Controls"
                 >
-                    <RotateCcw className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+                    <Filter className="w-3.5 h-3.5" />
                 </button>
-                <div className="bg-white/80 dark:bg-black/80 backdrop-blur border border-sharp px-3 py-1.5 rounded shadow-sm">
-                    <span className="text-xs font-mono font-bold text-slate-600 dark:text-slate-300">
-                        Nodes: {nodes.length}
-                    </span>
-                </div>
             </div>
 
-            {/* Bottom Left: Legend Toggle */}
-            <div className="absolute bottom-4 left-4 z-10 flex flex-col items-start space-y-2">
-                {/* Collapsible Panel */}
-                {showLegend && (
-                    <div className="bg-white/90 dark:bg-black/90 backdrop-blur border border-sharp p-3 rounded shadow-sm mb-2 animate-in slide-in-from-bottom-2 fade-in duration-200">
-                        <div className="flex flex-col space-y-2">
-                            {Object.entries(TYPE_COLORS).map(([type, color]) => (
-                                <div key={type} className="flex items-center space-x-2">
-                                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: color }}></span>
-                                    <span className="text-[10px] font-bold uppercase text-slate-600 dark:text-slate-300 font-mono">{type}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
+            {/* Truncation Alert */}
+            {isTruncated && (
+                <div className="absolute top-4 right-4 z-20 bg-amber-500/10 border border-amber-500/30 text-amber-400 px-3 py-1.5 rounded-lg text-[10px] flex items-center shadow-lg">
+                    <ShieldAlert className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+                    Graph truncated to max limit ({nodeLimit} nodes)
+                </div>
+            )}
 
-                {/* Toggle Button */}
+            {/* Filter Controls Panel Dropdown */}
+            {showControlsPanel && (
+                <div className="absolute top-16 left-4 z-30 bg-slate-900 border border-slate-800 p-4 rounded-lg shadow-2xl space-y-3 w-64">
+                    <div className="text-[10px] text-slate-400 font-bold uppercase">Node Types</div>
+                    <div className="grid grid-cols-2 gap-1.5 text-[10px]">
+                        {Object.keys(selectedNodeTypes).map(t => (
+                            <label key={t} className="flex items-center space-x-1.5 text-slate-300 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={selectedNodeTypes[t]}
+                                    onChange={() => setSelectedNodeTypes(prev => ({ ...prev, [t]: !prev[t] }))}
+                                    className="rounded border-slate-700 bg-slate-950"
+                                />
+                                <span>{t}</span>
+                            </label>
+                        ))}
+                    </div>
+
+                    <div className="text-[10px] text-slate-400 font-bold uppercase pt-2 border-t border-slate-800">Relationships</div>
+                    <div className="grid grid-cols-2 gap-1.5 text-[10px]">
+                        {Object.keys(selectedRelTypes).map(r => (
+                            <label key={r} className="flex items-center space-x-1.5 text-slate-300 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={selectedRelTypes[r]}
+                                    onChange={() => setSelectedRelTypes(prev => ({ ...prev, [r]: !prev[r] }))}
+                                    className="rounded border-slate-700 bg-slate-950"
+                                />
+                                <span>{r}</span>
+                            </label>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Canvas ReactFlow Controls */}
+            <div className="absolute bottom-4 left-4 z-20 flex space-x-2">
+                <button
+                    onClick={() => reactFlowInstance.fitView()}
+                    className="p-2 bg-slate-900 border border-slate-800 rounded hover:bg-slate-800 text-slate-300 shadow-md"
+                    title="Fit to Screen"
+                >
+                    <Maximize2 className="w-4 h-4" />
+                </button>
                 <button
                     onClick={() => setShowLegend(!showLegend)}
-                    className="flex items-center justify-center p-2 bg-white/80 dark:bg-black/80 backdrop-blur border border-sharp rounded-full shadow-sm hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
+                    className="p-2 bg-slate-900 border border-slate-800 rounded hover:bg-slate-800 text-slate-300 shadow-md"
                     title="Toggle Legend"
                 >
-                    <Info className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+                    <Info className="w-4 h-4" />
                 </button>
             </div>
+
+            {/* Legend Overlay */}
+            {showLegend && (
+                <div className="absolute bottom-14 left-4 z-30 bg-slate-900/95 border border-slate-800 p-3 rounded-lg shadow-xl space-y-2">
+                    <div className="text-[10px] text-slate-500 font-bold uppercase">Graph Legend</div>
+                    {Object.entries(TYPE_COLORS).map(([t, color]) => (
+                        <div key={t} className="flex items-center space-x-2 text-[10px]">
+                            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }}></span>
+                            <span className="text-slate-300">{t}</span>
+                        </div>
+                    ))}
+                </div>
+            )}
 
             <ReactFlow
                 nodes={nodes}
                 edges={edges}
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
-                onConnect={onConnect}
                 onNodeClick={handleNodeClick}
-                onNodeDoubleClick={handleNodeDoubleClick}
                 fitView
-                className="bg-dot-pattern"
+                className="bg-slate-950"
             >
-                <Controls showInteractive={false} className="bg-white dark:bg-black border-sharp fill-black dark:fill-white" />
-                <MiniMap
-                    className="bg-white dark:bg-black border-sharp"
-                    nodeColor={() => '#e2e8f0'}
-                    maskColor="rgba(0, 0, 0, 0.05)"
-                />
-                <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#e5e5e5" />
+                <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="#334155" />
             </ReactFlow>
         </div>
+    );
+}
+
+export default function GraphCanvas(props: any) {
+    return (
+        <ReactFlowProvider>
+            <GraphCanvasInner {...props} />
+        </ReactFlowProvider>
     );
 }

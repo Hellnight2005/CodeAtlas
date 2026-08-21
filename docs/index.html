@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeAtlas — Local-First AI Code Intelligence Engine</title>
+    <meta name="description" content="Local-first graph-native code intelligence engine for AI agents. Stop making AI read the entire codebase. Make the graph tell the AI where to look.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0b0f19;
+            --card-bg: rgba(18, 24, 38, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.35);
+            --cyan: #06b6d4;
+            --emerald: #10b981;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Subtle animated background grid */
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: radial-gradient(rgba(99, 102, 241, 0.12) 1px, transparent 1px);
+            background-size: 32px 32px;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        header {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 800;
+            font-size: 1.4rem;
+            background: linear-gradient(135deg, #6366f1, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        nav a:hover {
+            color: #ffffff;
+        }
+
+        .btn-github {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--card-border);
+            padding: 0.6rem 1.2rem;
+            border-radius: 9999px;
+            color: #fff;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-github:hover {
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Hero */
+        .hero {
+            max-width: 1000px;
+            margin: 4rem auto;
+            text-align: center;
+            padding: 0 1.5rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.4rem 1rem;
+            border-radius: 9999px;
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: #818cf8;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        h1 span {
+            background: linear-gradient(135deg, #818cf8 0%, #38bdf8 50%, #34d399 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 750px;
+            margin: 0 auto 2.5rem;
+            font-weight: 400;
+        }
+
+        .hero-cmds {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .cmd-box {
+            background: #1e293b;
+            border: 1px solid var(--card-border);
+            padding: 0.9rem 1.5rem;
+            border-radius: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            color: #38bdf8;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Features */
+        .features {
+            max-width: 1200px;
+            margin: 6rem auto;
+            padding: 0 1.5rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 1rem;
+            padding: 2rem;
+            backdrop-filter: blur(12px);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(99, 102, 241, 0.4);
+        }
+
+        .card-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .card h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+
+        .card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Code Block Showcase */
+        .showcase {
+            max-width: 1000px;
+            margin: 6rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .terminal-header {
+            background: #1e293b;
+            padding: 0.75rem 1.25rem;
+            border-top-left-radius: 0.75rem;
+            border-top-right-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid var(--card-border);
+            border-bottom: none;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .dot-red { background: #ef4444; }
+        .dot-yellow { background: #f59e0b; }
+        .dot-green { background: #10b981; }
+
+        .terminal-body {
+            background: #0f172a;
+            padding: 1.75rem;
+            border-bottom-left-radius: 0.75rem;
+            border-bottom-right-radius: 0.75rem;
+            border: 1px solid var(--card-border);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: #e2e8f0;
+            overflow-x: auto;
+        }
+
+        .prompt { color: #38bdf8; }
+        .highlight { color: #a78bfa; }
+        .comment { color: #64748b; }
+
+        footer {
+            max-width: 1200px;
+            margin: 6rem auto 3rem;
+            padding: 0 1.5rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--card-border);
+            padding-top: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            nav { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+
+    <header>
+        <div class="logo">
+            <span>🗺️ CodeAtlas</span>
+        </div>
+        <nav>
+            <a href="#features">Features</a>
+            <a href="#mcp">MCP Tools</a>
+            <a href="#quickstart">Quick Start</a>
+        </nav>
+        <a href="https://github.com/Hellnight2005/CodeAtlas-" class="btn-github">GitHub Repository</a>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="badge">🚀 Local-First Graph-Native Code Intelligence</div>
+            <h1>Stop making AI read raw files.<br><span>Let the graph guide the AI.</span></h1>
+            <p class="subtitle">CodeAtlas indexes your codebase into a high-performance Neo4j knowledge graph, connecting to AI Agents (Cursor, Antigravity, Claude) over MCP with zero cloud dependency.</p>
+            <div class="hero-cmds">
+                <div class="cmd-box">
+                    <span>$</span> codeatlas start
+                </div>
+            </div>
+        </section>
+
+        <section class="features" id="features">
+            <div class="card">
+                <div class="card-icon">⚡</div>
+                <h3>Graph-RAG Retrieval</h3>
+                <p>Combines concept normalization, lexical search, and 6-factor Neo4j graph reranking to deliver exact file and line ranges without token bloat.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">🔒</div>
+                <h3>100% Local Privacy</h3>
+                <p>Zero source code or metadata leaves your machine. Operates completely offline with SQLite and local Neo4j persistent storage.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">🤖</div>
+                <h3>8 Progressive MCP Tools</h3>
+                <p>Equips AI agents with search, symbol lookup, caller/callee traversal, dependency inspection, impact analysis, and route execution tracing.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">🚀</div>
+                <h3>Bounded Concurrency Indexer</h3>
+                <p>Multi-core CPU parallel AST parser pool featuring SHA-256 content hash skipping for sub-second incremental re-indexing.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">🎯</div>
+                <h3>Architectural Flow Derivation</h3>
+                <p>Automatically derives layered execution paths from HTTP entry points (<code>POST /upload</code>) down to database operations.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">📊</div>
+                <h3>Full-Screen Dashboard</h3>
+                <p>Next.js 16 interactive graph workspace with tabbed node inspector, search filters, and keyboard navigation shortcuts.</p>
+            </div>
+        </section>
+
+        <section class="showcase" id="quickstart">
+            <div class="terminal-header">
+                <div class="dot dot-red"></div>
+                <div class="dot dot-yellow"></div>
+                <div class="dot dot-green"></div>
+                <span style="font-size: 0.8rem; color: #94a3b8; margin-left: 0.5rem;">bash — CodeAtlas CLI</span>
+            </div>
+            <div class="terminal-body">
+                <p><span class="comment"># 1. Install & Link CodeAtlas globally</span></p>
+                <p><span class="prompt">$</span> git clone https://github.com/Hellnight2005/CodeAtlas-.git</p>
+                <p><span class="prompt">$</span> cd CodeAtlas- && npm install && npm link</p>
+                <br>
+                <p><span class="comment"># 2. Run in any project directory</span></p>
+                <p><span class="prompt">$</span> cd /path/to/your/project</p>
+                <p><span class="prompt">$</span> codeatlas start</p>
+                <br>
+                <p><span class="highlight">✔ CodeAtlas Core Infrastructure Ready</span></p>
+                <p>  - REST API Engine:  <a href="http://localhost:5001" style="color: #38bdf8;">http://localhost:5001</a></p>
+                <p>  - Dashboard UI:       <a href="http://localhost:3001" style="color: #38bdf8;">http://localhost:3001</a></p>
+                <p>  - MCP Server:         stdio ready</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>CodeAtlas is an open-source project released under the MIT License.</p>
+    </footer>
+</body>
+</html>

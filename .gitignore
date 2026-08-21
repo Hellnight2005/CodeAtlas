@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Build & Next.js output
+dist/
+build/
+frontend/.next/
+frontend/out/
+
+# CodeAtlas User Data & Logs
+.codeatlas/
+*.log
+*.sqlite
+*.db
+
+# Environment & Local Overrides
+.env
+.env.local
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage/
+.nyc_output/

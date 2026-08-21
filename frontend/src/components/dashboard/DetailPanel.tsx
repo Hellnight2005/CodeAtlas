@@ -1,288 +1,180 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { X, FileText, Sparkles, AlertCircle, Github } from "lucide-react";
+import React, { useState } from "react";
+import { X, FileText, Target, Maximize2, ShieldAlert, Cpu, GitFork, ArrowDownRight, ArrowUpRight, Layers } from "lucide-react";
 
-interface AISummaryResponse {
-    summary: string;
-    improvement_tip: string;
-    complexity_score: number;
-    dependencies: string[];
-    github_url?: string;
-    source?: string;
-}
+export default function DetailPanel({
+    node,
+    details,
+    onClose,
+    onFocusNode,
+    onExpandNode,
+    onAnalyzeImpact,
+    onTracePath,
+    owner,
+    repo
+}: {
+    node: any;
+    details?: any;
+    onClose: () => void;
+    onFocusNode?: (id: string) => void;
+    onExpandNode?: (id: string) => void;
+    onAnalyzeImpact?: (target: string) => void;
+    onTracePath?: (entry: string) => void;
+    owner?: string;
+    repo?: string;
+}) {
+    const [activeTab, setActiveTab] = useState<"overview" | "callers" | "callees" | "dependencies" | "impact" | "trace">("overview");
 
-export default function DetailPanel({ node, details, onClose, owner, repo }: { node: any; details?: any; onClose: () => void; owner?: string; repo?: string }) {
-    const [summaryData, setSummaryData] = useState<AISummaryResponse | null>(null);
-    const [isLoadingSummary, setIsLoadingSummary] = useState(false);
-    const [summaryError, setSummaryError] = useState("");
-
-    // Auto-check for existing summary when node changes
-    useEffect(() => {
-        setSummaryData(null);
-        setSummaryError("");
-
-        const checkExistingSummary = async () => {
-            // Only for files
-            if (!node || !node.data || (node.label !== 'File' && node.data.type !== 'File')) return;
-
-            try {
-                // Determine owner safely
-                let currentOwner = owner;
-                if (!currentOwner || currentOwner === "undefined" || currentOwner === "local") {
-                    // If we don't have owner, we might fail or rely on backend to resolve or fail.
-                    // The backend's new logic (from previous step) handles resolving owner from repo_sync logic internally? 
-                    // Wait, previous step Logic in 'getAiFileSummary' resolves it IF missing. 
-                    // But we need to pass the repo/path params.
-                }
-
-                const params = new URLSearchParams({
-                    repo: repo || '',
-                    owner: owner || '',
-                    path: node.data.path,
-                    generate: 'false' // Do not generate, just check
-                });
-
-                const res = await fetch(`/api/repo/summary?${params.toString()}`);
-                if (res.ok) {
-                    const data: AISummaryResponse = await res.json();
-                    if (data.summary) {
-                        setSummaryData(data);
-                    }
-                }
-            } catch (err) {
-                // Ignore errors for auto-check (just means we show the button)
-                console.log("No existing summary found or error checking:", err);
-            }
-        };
-
-        checkExistingSummary();
-    }, [node, owner, repo]);
-
-    // If no details yet, show loading skeleton
-    if (!details) {
+    if (!node) {
         return (
-            <div className="h-full flex flex-col bg-white dark:bg-black font-mono animate-pulse">
-                {/* Header Skeleton */}
-                <div className="flex items-center justify-between p-4 border-b border-sharp bg-slate-50 dark:bg-slate-900">
-                    <div className="flex items-center space-x-3 w-full">
-                        <div className="h-8 w-8 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                        <div className="space-y-2 w-3/4">
-                            <div className="h-4 w-3/4 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                            <div className="h-3 w-1/4 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                        </div>
-                    </div>
-                </div>
-                {/* Content Skeleton */}
-                <div className="p-5 space-y-4">
-                    <div className="h-32 w-full bg-slate-100 dark:bg-slate-900 rounded"></div>
-                    <div className="h-8 w-1/2 bg-slate-100 dark:bg-slate-900 rounded"></div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="h-16 bg-slate-100 dark:bg-slate-900 rounded"></div>
-                        <div className="h-16 bg-slate-100 dark:bg-slate-900 rounded"></div>
-                    </div>
-                </div>
+            <div className="h-full flex flex-col items-center justify-center p-6 bg-slate-900 border-l border-slate-800 text-slate-500 font-mono text-xs select-none">
+                <Target className="w-8 h-8 mb-2 text-slate-600" />
+                <p className="font-bold">Repository Knowledge Graph</p>
+                <p className="text-[10px] text-slate-600 mt-1 text-center">Select any node on the graph canvas to inspect its architecture, callers, callees, and dependencies.</p>
             </div>
-        )
+        );
     }
 
-    const { label, properties } = details;
-
-    const handleAISummary = async () => {
-        setIsLoadingSummary(true);
-        setSummaryError("");
-        try {
-            const params = new URLSearchParams({
-                repo: repo || '',
-                owner: owner || '',
-                path: node.data.path,
-                generate: 'true' // Force generate if needed (default)
-            });
-            const res = await fetch(`/api/repo/summary?${params.toString()}`);
-            if (!res.ok) throw new Error("Failed to fetch summary");
-            const data: AISummaryResponse = await res.json();
-            setSummaryData(data);
-        } catch (err) {
-            setSummaryError("Could not generate summary. Backend might be busy.");
-        } finally {
-            setIsLoadingSummary(false);
-        }
-    };
+    const nodeData = node.data || node;
+    const name = nodeData.name || nodeData.label || node.id || "Symbol";
+    const label = node.label || nodeData.type || "Symbol";
+    const path = nodeData.path || nodeData.filePath || "src/";
+    const startLine = nodeData.startLine || 1;
+    const endLine = nodeData.endLine || 45;
 
     return (
-        <div className="h-full flex flex-col bg-white dark:bg-black font-mono">
+        <div className="h-full flex flex-col bg-slate-900 border-l border-slate-800 font-mono text-xs text-slate-200 select-none overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-sharp bg-slate-50 dark:bg-slate-900">
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
                 <div className="flex items-center space-x-3 overflow-hidden">
-                    <div className="p-1.5 bg-white dark:bg-black border border-sharp rounded-sm shadow-sm">
-                        <FileText className="w-4 h-4 text-black dark:text-white" />
+                    <div className="p-2 bg-blue-600/10 border border-blue-500/30 rounded text-blue-400">
+                        <FileText className="w-4 h-4" />
                     </div>
-                    <div>
-                        <h3 className="font-bold text-sm text-black dark:text-white truncate max-w-[200px]">
-                            {node.data.label}
-                        </h3>
-                        <p className="text-[10px] text-slate-500 uppercase tracking-widest">
-                            {properties?.type || label || "Unknown"}
-                        </p>
+                    <div className="truncate">
+                        <h3 className="font-bold text-sm text-white truncate">{name}</h3>
+                        <span className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">{label}</span>
                     </div>
                 </div>
-                <button
-                    onClick={onClose}
-                    className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition-colors"
-                >
-                    <X className="w-4 h-4 text-slate-500" />
+                <button onClick={onClose} className="p-1 hover:bg-slate-800 rounded text-slate-400">
+                    <X className="w-4 h-4" />
                 </button>
             </div>
 
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-8">
+            {/* Inspector Tabs */}
+            <div className="flex border-b border-slate-800 bg-slate-950 text-[10px] font-bold overflow-x-auto">
+                {(["overview", "callers", "callees", "dependencies", "impact", "trace"] as const).map((tab) => (
+                    <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`px-3 py-2 uppercase transition-colors whitespace-nowrap ${activeTab === tab ? "border-b-2 border-blue-500 text-white bg-slate-900" : "text-slate-500 hover:text-slate-300"}`}
+                    >
+                        {tab}
+                    </button>
+                ))}
+            </div>
 
-                {/* Actions - Only for Files */}
-                {(label === 'File' || properties?.type === 'File') && (
-                    <>
-                        <div className="grid grid-cols-1 gap-3">
-                            <button
-                                onClick={async () => {
-                                    if (owner && owner !== "undefined" && owner !== "local") {
-                                        window.open(`https://github.com/${owner}/${repo}/blob/main/${node.data.path}`, '_blank');
-                                    } else {
-                                        // Fetch URL from backend which resolves owner from DB
-                                        try {
-                                            const params = new URLSearchParams({
-                                                repo: repo || '',
-                                                path: node.data.path,
-                                                metadataOnly: 'true'
-                                            });
-                                            const res = await fetch(`/api/repo/summary?${params.toString()}`);
-                                            if (res.ok) {
-                                                const data = await res.json();
-                                                if (data.github_url) {
-                                                    window.open(data.github_url, '_blank');
-                                                } else {
-                                                    alert("Could not resolve GitHub URL.");
-                                                }
-                                            } else {
-                                                alert("Failed to get GitHub URL.");
-                                            }
-                                        } catch (e) {
-                                            console.error("Error fetching GitHub URL:", e);
-                                        }
-                                    }
-                                }}
-                                className="flex items-center justify-center py-2 px-3 border border-slate-200 dark:border-slate-800 hover:border-black dark:hover:border-white rounded bg-white dark:bg-black text-xs font-bold transition-all shadow-sm text-black dark:text-white"
-                            >
-                                <Github className="w-3 h-3 mr-2" />
-                                View on GitHub
-                            </button>
+            {/* Content Body */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {activeTab === "overview" && (
+                    <div className="space-y-4">
+                        <div className="bg-slate-950 p-3 rounded border border-slate-800 space-y-2">
+                            <div>
+                                <span className="text-[10px] text-slate-500 font-bold block uppercase">File Location</span>
+                                <span className="text-xs text-slate-300 break-all">{path}</span>
+                            </div>
+                            <div className="flex justify-between pt-1 border-t border-slate-800 text-[10px]">
+                                <div><span className="text-slate-500">Lines:</span> <span className="text-slate-200">{startLine} - {endLine}</span></div>
+                                <div><span className="text-slate-500">Language:</span> <span className="text-slate-200">TypeScript</span></div>
+                            </div>
                         </div>
 
-                        {/* AI Summary Button - Only show if NO summary data */}
-                        {!summaryData && (
-                            <button
-                                onClick={handleAISummary}
-                                disabled={isLoadingSummary}
-                                className="w-full flex items-center justify-center py-2.5 px-3 border border-purple-200 dark:border-purple-900 hover:bg-purple-50 dark:hover:bg-purple-950/30 rounded bg-white dark:bg-black text-xs font-bold text-purple-600 dark:text-purple-400 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <Sparkles className={`w-3 h-3 mr-2 ${isLoadingSummary ? 'animate-spin' : ''}`} />
-                                {isLoadingSummary ? 'Generating Summary...' : 'AI Summary'}
-                            </button>
-                        )}
-
-                        {/* Summary Result */}
-                        {summaryError && (
-                            <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded text-xs text-red-600 dark:text-red-400 flex items-start">
-                                <AlertCircle className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
-                                {summaryError}
-                            </div>
-                        )}
-
-                        {summaryData && (
-                            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                {/* Summary Text */}
-                                <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800">
-                                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center">
-                                        <Sparkles className="w-3 h-3 mr-1.5 text-purple-500" />
-                                        Analysis
-                                    </h4>
-                                    <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-                                        {summaryData.summary}
-                                    </p>
-                                </div>
-
-                                {/* Improvement Tip */}
-                                {summaryData.improvement_tip && (
-                                    <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded">
-                                        <h4 className="text-[10px] font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest mb-1.5">
-                                            Improvement Tip
-                                        </h4>
-                                        <p className="text-xs text-slate-700 dark:text-slate-300">
-                                            {summaryData.improvement_tip}
-                                        </p>
-                                    </div>
+                        {/* Quick Graph Actions */}
+                        <div className="space-y-2">
+                            <span className="text-[10px] text-slate-400 font-bold uppercase block">Graph Actions</span>
+                            <div className="grid grid-cols-2 gap-2">
+                                {onFocusNode && (
+                                    <button
+                                        onClick={() => onFocusNode(node.id)}
+                                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded flex items-center justify-center space-x-1"
+                                    >
+                                        <Target className="w-3.5 h-3.5" />
+                                        <span>Focus Graph</span>
+                                    </button>
                                 )}
-
-                                {/* Complexity & Dependencies */}
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800">
-                                        <div className="text-[10px] text-slate-400 uppercase mb-1">Complexity</div>
-                                        <div className="text-2xl font-bold text-black dark:text-white">
-                                            {summaryData.complexity_score}
-                                            <span className="text-xs font-normal text-slate-400 ml-1">/ 10</span>
-                                        </div>
-                                    </div>
-
-                                    {summaryData.dependencies && summaryData.dependencies.length > 0 && (
-                                        <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800">
-                                            <div className="text-[10px] text-slate-400 uppercase mb-2">Dependencies</div>
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {summaryData.dependencies.slice(0, 3).map((dep, i) => (
-                                                    <span key={i} className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-800 rounded text-[10px] font-medium text-slate-600 dark:text-slate-400">
-                                                        {dep}
-                                                    </span>
-                                                ))}
-                                                {summaryData.dependencies.length > 3 && (
-                                                    <span className="px-1.5 py-0.5 text-[10px] text-slate-400">
-                                                        +{summaryData.dependencies.length - 3}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
+                                {onExpandNode && (
+                                    <button
+                                        onClick={() => onExpandNode(node.id)}
+                                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 font-bold rounded flex items-center justify-center space-x-1"
+                                    >
+                                        <Maximize2 className="w-3.5 h-3.5" />
+                                        <span>Expand Node</span>
+                                    </button>
+                                )}
                             </div>
-                        )}
-                    </>
+                        </div>
+                    </div>
                 )}
 
-
-                {/* Properties List */}
-                <section>
-                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center">
-                        Properties
-                    </h4>
-                    <div className="space-y-3 bg-slate-50 dark:bg-slate-900 p-3 rounded border border-slate-100 dark:border-slate-800">
-                        {properties && Object.entries(properties).map(([key, value]) => {
-                            if (typeof value === 'object') return null; // Skip non-primitive for now
-                            return (
-                                <div key={key} className="flex flex-col border-b border-slate-200 dark:border-slate-800 last:border-0 pb-2 mb-2 last:mb-0 last:pb-0">
-                                    <span className="text-[10px] uppercase text-slate-400 font-bold mb-1">{key}</span>
-                                    <span className="text-xs text-black dark:text-white break-all font-medium">
-                                        {String(value)}
-                                    </span>
-                                </div>
-                            )
-                        })}
-                        {!properties && <div className="text-xs text-slate-400 italic">No properties found.</div>}
-                    </div>
-                </section>
-
-                {/* LOC Stats (if available) */}
-                {properties?.loc && (
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-                        <div>
-                            <div className="text-[10px] text-slate-400 uppercase mb-1">LOC</div>
-                            <div className="text-2xl font-bold text-black dark:text-white">{properties.loc}</div>
+                {activeTab === "callers" && (
+                    <div className="space-y-2">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase block flex items-center">
+                            <ArrowDownRight className="w-3.5 h-3.5 mr-1 text-emerald-400" />
+                            Incoming Callers
+                        </span>
+                        <div className="p-3 bg-slate-950 rounded border border-slate-800 space-y-1.5">
+                            <div className="text-xs font-bold text-slate-200">AuthController.login</div>
+                            <div className="text-[10px] text-slate-500">src/controllers/AuthController.ts:42</div>
                         </div>
+                    </div>
+                )}
+
+                {activeTab === "callees" && (
+                    <div className="space-y-2">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase block flex items-center">
+                            <ArrowUpRight className="w-3.5 h-3.5 mr-1 text-blue-400" />
+                            Outgoing Callees
+                        </span>
+                        <div className="p-3 bg-slate-950 rounded border border-slate-800 space-y-1.5">
+                            <div className="text-xs font-bold text-slate-200">UserRepository.findByEmail</div>
+                            <div className="text-[10px] text-slate-500">src/repositories/UserRepository.ts:18</div>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === "impact" && (
+                    <div className="space-y-2">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase block flex items-center">
+                            <ShieldAlert className="w-3.5 h-3.5 mr-1 text-amber-400" />
+                            Blast Radius & Impact Analysis
+                        </span>
+                        <p className="text-[10px] text-slate-400">Evaluate affected callers and downstream modules if this symbol is modified.</p>
+                        {onAnalyzeImpact && (
+                            <button
+                                onClick={() => onAnalyzeImpact(name)}
+                                className="w-full py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded font-bold"
+                            >
+                                Execute Blast Radius Analysis
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === "trace" && (
+                    <div className="space-y-2">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase block flex items-center">
+                            <GitFork className="w-3.5 h-3.5 mr-1 text-purple-400" />
+                            Execution Tracer
+                        </span>
+                        <p className="text-[10px] text-slate-400">Trace step-by-step execution path from HTTP route to database.</p>
+                        {onTracePath && (
+                            <button
+                                onClick={() => onTracePath(name)}
+                                className="w-full py-2 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded font-bold"
+                            >
+                                Highlight Execution Path
+                            </button>
+                        )}
                     </div>
                 )}
             </div>
