@@ -27,9 +27,12 @@ const ProjectContext = createContext<ProjectContextType>({
 });
 
 export const ProjectProvider = ({ children }: { children: React.ReactNode }) => {
-    const [projects, setProjects] = useState<Project[]>([]);
-    const [activeProject, setActiveProject] = useState<Project | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const handleSetActiveProject = (project: Project) => {
+        setActiveProject(project);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('codeatlas_active_proj_id', project.id);
+        }
+    };
 
     const refreshProjects = async () => {
         setIsLoading(true);
@@ -39,7 +42,8 @@ export const ProjectProvider = ({ children }: { children: React.ReactNode }) => 
                 const data = await res.json();
                 setProjects(data);
                 if (data.length > 0) {
-                    const current = data.find((p: any) => p.isCurrent) || data[0];
+                    const savedId = typeof window !== 'undefined' ? localStorage.getItem('codeatlas_active_proj_id') : null;
+                    const current = (savedId && data.find((p: any) => p.id === savedId)) || data.find((p: any) => p.isCurrent) || data[0];
                     setActiveProject(current);
                 }
             }
@@ -66,7 +70,7 @@ export const ProjectProvider = ({ children }: { children: React.ReactNode }) => 
 
     return (
         <ProjectContext.Provider
-            value={{ projects, activeProject, setActiveProject, refreshProjects, isLoading }}
+            value={{ projects, activeProject, setActiveProject: handleSetActiveProject, refreshProjects, isLoading }}
         >
             {children}
         </ProjectContext.Provider>
