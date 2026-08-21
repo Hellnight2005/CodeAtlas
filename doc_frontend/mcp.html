@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Tools — CodeAtlas Documentation</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="app-container">
+        <aside class="sidebar">
+            <a href="index.html" class="brand">🗺️ CodeAtlas</a>
+            <div class="nav-section">
+                <div class="nav-section-title">Getting Started</div>
+                <ul class="nav-links">
+                    <li><a href="index.html">Overview & Setup</a></li>
+                    <li><a href="architecture.html">Architecture & Graph-RAG</a></li>
+                </ul>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Reference</div>
+                <ul class="nav-links">
+                    <li><a href="mcp.html" class="active">MCP Tools (8 Suite)</a></li>
+                    <li><a href="cli.html">CLI Commands & Config</a></li>
+                    <li><a href="providers.html">AI Providers</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="badge">Model Context Protocol</div>
+            <h1>Progressive <span>MCP Tools Reference</span></h1>
+            <p>CodeAtlas equips AI agents with 8 progressive MCP tools for token-efficient code intelligence.</p>
+
+            <h2>Tool Suite Overview</h2>
+
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="tool-badge">codeatlas_search</div>
+                <h3>Natural Language Candidate Search</h3>
+                <p>Searches the repository using natural language concepts, symbols, routes, and paths without requiring exact symbol names.</p>
+                <pre><code>codeatlas_search({ query: "How does upload work?", limit: 20 })</code></pre>
+            </div>
+
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="tool-badge">codeatlas_get_context</div>
+                <h3>Graph-RAG Evidence Context Package</h3>
+                <p>Retrieves a focused structural subgraph containing entry points, call flows, line ranges, and technology badges.</p>
+                <pre><code>codeatlas_get_context({ query: "How does authentication reach database?", depth: 2 })</code></pre>
+            </div>
+
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="tool-badge">codeatlas_find_symbol</div>
+                <h3>Symbol Definition Lookup</h3>
+                <p>Finds definitions, signatures, and locations for functions, classes, files, or variables.</p>
+                <pre><code>codeatlas_find_symbol({ symbol: "AuthService" })</code></pre>
+            </div>
+
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="tool-badge">codeatlas_get_callers</div>
+                <h3>Caller Graph Traversal</h3>
+                <p>Discovers all callers and invokers of a target function up to depth 3.</p>
+                <pre><code>codeatlas_get_callers({ symbol: "authenticate", maxDepth: 3 })</code></pre>
+            </div>
+
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="tool-badge">codeatlas_get_callees</div>
+                <h3>Callee Graph Traversal</h3>
+                <p>Discovers all functions and methods invoked by a target symbol.</p>
+                <pre><code>codeatlas_get_callees({ symbol: "loginController", maxDepth: 3 })</code></pre>
+            </div>
+
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="tool-badge">codeatlas_get_dependencies</div>
+                <h3>Module & Import Dependencies</h3>
+                <p>Inspects file imports, module boundaries, and external library dependencies.</p>
+                <pre><code>codeatlas_get_dependencies({ target: "src/auth.js" })</code></pre>
+            </div>
+
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="tool-badge">codeatlas_analyze_impact</div>
+                <h3>Change Blast Radius Analysis</h3>
+                <p>Evaluates what files, functions, and routes may be impacted if a target symbol is modified.</p>
+                <pre><code>codeatlas_analyze_impact({ target: "UserRepository" })</code></pre>
+            </div>
+
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="tool-badge">codeatlas_trace_execution</div>
+                <h3>Route Execution Tracing</h3>
+                <p>Traces step-by-step call sequences from HTTP route entry points to database layer.</p>
+                <pre><code>codeatlas_trace_execution({ entryPoint: "POST /upload" })</code></pre>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

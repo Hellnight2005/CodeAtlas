@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLI & Config — CodeAtlas Documentation</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="app-container">
+        <aside class="sidebar">
+            <a href="index.html" class="brand">🗺️ CodeAtlas</a>
+            <div class="nav-section">
+                <div class="nav-section-title">Getting Started</div>
+                <ul class="nav-links">
+                    <li><a href="index.html">Overview & Setup</a></li>
+                    <li><a href="architecture.html">Architecture & Graph-RAG</a></li>
+                </ul>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Reference</div>
+                <ul class="nav-links">
+                    <li><a href="mcp.html">MCP Tools (8 Suite)</a></li>
+                    <li><a href="cli.html" class="active">CLI Commands & Config</a></li>
+                    <li><a href="providers.html">AI Providers</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="badge">Developer CLI & Config</div>
+            <h1>CLI Suite & <span>Configuration</span></h1>
+            <p>CodeAtlas provides a zero-friction CLI suite for project management, indexing, diagnostics, and environment start.</p>
+
+            <h2>CLI Command Reference</h2>
+            <pre><code>codeatlas start      # One-command environment start (API + Dashboard + MCP)
+codeatlas stop       # Gracefully stop services and release project locks
+codeatlas reset      # Safely reset graph index data for a target project
+codeatlas init       # Initialize local .codeatlas/config.yaml in repository
+codeatlas index .    # Scan repository, parse ASTs, build structural code graph
+codeatlas watch      # Watch repository for file modifications and update graph
+codeatlas serve      # Launch REST API (5001) and Dashboard UI (3001)
+codeatlas doctor     # Diagnose Node.js, SQLite, Neo4j, and Search engine
+codeatlas benchmark  # Run performance latency & retrieval quality benchmarks
+codeatlas projects   # List all registered repositories in global.db</code></pre>
+
+            <h2>Project Configuration (<code>.codeatlas/config.yaml</code>)</h2>
+            <pre><code>repository:
+  id: "my-awesome-repo"
+  ignore:
+    - "node_modules/**"
+    - "dist/**"
+    - ".next/**"
+    - "coverage/**"
+
+indexing:
+  incremental: true
+  maxDepth: 3
+  boundedConcurrency: true
+
+ai:
+  provider: "claude"     # Options: "claude", "gemini", "openai", "ollama", "none"
+  model: "claude-3-5-sonnet-20241022"</code></pre>
+        </main>
+    </div>
+</body>
+</html>

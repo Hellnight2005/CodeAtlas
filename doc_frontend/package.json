@@ -1,0 +1,8 @@
+{
+  "name": "codeatlas-docs-frontend",
+  "version": "1.0.0",
+  "description": "CodeAtlas Multi-Page Documentation Hub ready for Vercel deployment",
+  "scripts": {
+    "start": "npx serve ."
+  }
+}

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture — CodeAtlas Documentation</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="app-container">
+        <aside class="sidebar">
+            <a href="index.html" class="brand">🗺️ CodeAtlas</a>
+            <div class="nav-section">
+                <div class="nav-section-title">Getting Started</div>
+                <ul class="nav-links">
+                    <li><a href="index.html">Overview & Setup</a></li>
+                    <li><a href="architecture.html" class="active">Architecture & Graph-RAG</a></li>
+                </ul>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Reference</div>
+                <ul class="nav-links">
+                    <li><a href="mcp.html">MCP Tools (8 Suite)</a></li>
+                    <li><a href="cli.html">CLI Commands & Config</a></li>
+                    <li><a href="providers.html">AI Providers</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="badge">Architecture & Pipeline</div>
+            <h1>Graph-RAG <span>Engine Architecture</span></h1>
+            <p>CodeAtlas bridges static AST analysis, SQLite metadata caching, and Neo4j graph traversal to deliver context to AI Agents.</p>
+
+            <h2>System Pipeline</h2>
+            <pre><code>User Question
+    │
+    ▼
+AI Agent (Cursor / Antigravity / Claude)
+    │ (MCP stdio)
+    ▼
+CodeAtlas MCP Server
+    │
+    ├─► Query Normalizer (Strips stop words, extracts tokens)
+    │
+    ├─► Candidate Search Engine (Stage 1 lookup)
+    │
+    ├─► Neo4j Graph Expansion (Depth 1-3 traversal)
+    │
+    ├─► 6-Factor Reranker (Computes graph proximity & layer score)
+    │
+    └─► Context Compiler (Packages line ranges & evidence)
+    │
+    ▼
+Grounded AI Answer</code></pre>
+
+            <h2>6-Factor Reranking Formula</h2>
+            <p>Every candidate symbol and node is scored dynamically using 6 parameters:</p>
+            <pre><code>final_score = semantic_score 
+            + lexical_score 
+            + symbol_score 
+            + graph_proximity 
+            + entry_point_score 
+            + relationship_score</code></pre>
+
+            <h2>Architectural Layer Derivation</h2>
+            <p>CodeAtlas precomputes architectural layers during AST extraction:</p>
+            <div class="card-grid">
+                <div class="card">
+                    <div class="tool-badge">ROUTE</div>
+                    <div class="card-desc">HTTP endpoints (e.g. <code>POST /upload</code>, <code>GET /api/users</code>).</div>
+                </div>
+                <div class="card">
+                    <div class="tool-badge">CONTROLLER</div>
+                    <div class="card-desc">Request handler functions mapping HTTP routes to business logic.</div>
+                </div>
+                <div class="card">
+                    <div class="tool-badge">SERVICE</div>
+                    <div class="card-desc">Core domain logic, media processors, and transcoding services.</div>
+                </div>
+                <div class="card">
+                    <div class="tool-badge">REPOSITORY</div>
+                    <div class="card-desc">Data access objects, database queries, and storage adapters.</div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

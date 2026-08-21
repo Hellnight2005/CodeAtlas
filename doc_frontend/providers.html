@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Providers — CodeAtlas Documentation</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="app-container">
+        <aside class="sidebar">
+            <a href="index.html" class="brand">🗺️ CodeAtlas</a>
+            <div class="nav-section">
+                <div class="nav-section-title">Getting Started</div>
+                <ul class="nav-links">
+                    <li><a href="index.html">Overview & Setup</a></li>
+                    <li><a href="architecture.html">Architecture & Graph-RAG</a></li>
+                </ul>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Reference</div>
+                <ul class="nav-links">
+                    <li><a href="mcp.html">MCP Tools (8 Suite)</a></li>
+                    <li><a href="cli.html">CLI Commands & Config</a></li>
+                    <li><a href="providers.html" class="active">AI Providers</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="badge">Multi-Provider AI</div>
+            <h1>AI Provider <span>Abstraction</span></h1>
+            <p>CodeAtlas features an open AI provider factory layer enabling zero-cloud local mode or seamless integration with major AI providers.</p>
+
+            <h2>Supported Providers</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <div class="tool-badge">Anthropic Claude</div>
+                    <div class="card-title">Claude Provider</div>
+                    <div class="card-desc">Set <code>ANTHROPIC_API_KEY</code> or <code>CLAUDE_API_KEY</code> environment variable. Default model: <code>claude-3-5-sonnet-20241022</code>.</div>
+                </div>
+
+                <div class="card">
+                    <div class="tool-badge">Google Gemini</div>
+                    <div class="card-title">Gemini Provider</div>
+                    <div class="card-desc">Set <code>GEMINI_API_KEY</code> environment variable. Default model: <code>gemini-1.5-flash</code>.</div>
+                </div>
+
+                <div class="card">
+                    <div class="tool-badge">OpenAI</div>
+                    <div class="card-title">OpenAI Provider</div>
+                    <div class="card-desc">Set <code>OPENAI_API_KEY</code> environment variable. Default model: <code>gpt-4o-mini</code>.</div>
+                </div>
+
+                <div class="card">
+                    <div class="tool-badge">Ollama (Local)</div>
+                    <div class="card-title">Ollama Provider</div>
+                    <div class="card-desc">Runs 100% locally against Ollama API (Default: <code>http://localhost:11434</code>). Model: <code>llama3.2</code> or <code>qwen2.5-coder</code>.</div>
+                </div>
+
+                <div class="card">
+                    <div class="tool-badge">None (Local-First)</div>
+                    <div class="card-title">Local-First Mode</div>
+                    <div class="card-desc">Zero cloud APIs required. Uses pure Graph-RAG AST retrieval and 6-factor Neo4j reranking.</div>
+                </div>
+            </div>
+
+            <h2>Using the Factory in Code</h2>
+            <pre><code>const AiProviderFactory = require('./src/ai/AiProviderFactory');
+
+// Instantiate Anthropic Claude Provider
+const provider = AiProviderFactory.createProvider('claude', {
+    apiKey: process.env.ANTHROPIC_API_KEY
+});
+
+const res = await provider.query('Explain authentication pipeline');
+console.log(res.response);</code></pre>
+        </main>
+    </div>
+</body>
+</html>

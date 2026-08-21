@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overview — CodeAtlas Documentation</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="app-container">
+        <aside class="sidebar">
+            <a href="index.html" class="brand">🗺️ CodeAtlas</a>
+            <div class="nav-section">
+                <div class="nav-section-title">Getting Started</div>
+                <ul class="nav-links">
+                    <li><a href="index.html" class="active">Overview & Setup</a></li>
+                    <li><a href="architecture.html">Architecture & Graph-RAG</a></li>
+                </ul>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Reference</div>
+                <ul class="nav-links">
+                    <li><a href="mcp.html">MCP Tools (8 Suite)</a></li>
+                    <li><a href="cli.html">CLI Commands & Config</a></li>
+                    <li><a href="providers.html">AI Providers</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="badge">CodeAtlas Documentation v1.0</div>
+            <h1>Local-First <span>AI Code Intelligence</span> Engine</h1>
+            <p>CodeAtlas parses source repositories into a high-performance Neo4j knowledge graph, connecting AI Agents (Cursor, Antigravity, Claude Desktop) over MCP with zero cloud dependence.</p>
+
+            <h2>Core Philosophy</h2>
+            <p><strong>"Stop making AI read the entire codebase. Make the graph tell the AI where to look."</strong></p>
+            <p>Rather than dumping raw files into context windows, CodeAtlas runs a Graph-RAG pipeline that resolves exact line ranges and structural evidence.</p>
+
+            <h2>Quick Installation</h2>
+            <pre><code># 1. Clone & Link CodeAtlas
+git clone https://github.com/Hellnight2005/CodeAtlas-.git
+cd CodeAtlas-
+npm install
+npm link
+
+# 2. Run in any repository folder
+cd /path/to/your/project
+codeatlas init
+codeatlas index .
+codeatlas start</code></pre>
+
+            <h2>Key Features</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-title">⚡ Graph-RAG Pipeline</div>
+                    <div class="card-desc">2-stage hybrid retrieval engine with 6-factor Neo4j reranking and token budgeting.</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">🤖 8 Progressive MCP Tools</div>
+                    <div class="card-desc">Token-efficient MCP tool suite for candidate search, symbol resolution, and execution tracing.</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">🔒 100% Local Privacy</div>
+                    <div class="card-desc">All graphs, AST nodes, and logs live locally in <code>~/.codeatlas/</code>. Zero telemetry.</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">🚀 Multi-Core Indexer</div>
+                    <div class="card-desc">Parallel CPU worker pool with SHA-256 hash skipping for sub-second re-indexing.</div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
