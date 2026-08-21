@@ -132,8 +132,29 @@ export default function SystemDoctorPage() {
                         <p className="text-slate-400 text-xs mt-2">
                             🚀 <strong>Enterprise Graph Database</strong>. Built for large repositories with thousands of call graphs and complex relationships.
                         </p>
-                        <div className="mt-3 text-[11px] text-slate-500 font-mono">
-                            URL: bolt://localhost:7687 (Default Auth: neo4j/codeatlas123)
+                        <div className="mt-3 text-[11px] text-slate-400 font-mono space-y-2 bg-slate-900 p-2.5 rounded border border-slate-800">
+                            <div className="flex items-center justify-between text-slate-300 font-bold">
+                                <span>Docker Start Command:</span>
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigator.clipboard.writeText('docker run -d --name codeatlas-neo4j -p 7474:7474 -p 7687:7687 -e NEO4J_AUTH=neo4j/codeatlas123 neo4j:5-community');
+                                        alert('Copied Docker run command to clipboard!');
+                                    }}
+                                    className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded text-[10px] border border-slate-700 font-sans"
+                                >
+                                    Copy Command
+                                </button>
+                            </div>
+                            <code className="text-[10px] text-cyan-300 block bg-slate-950 p-1.5 rounded overflow-x-auto">
+                                docker run -d --name codeatlas-neo4j -p 7474:7474 -p 7687:7687 -e NEO4J_AUTH=neo4j/codeatlas123 neo4j:5-community
+                            </code>
+                            <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-800">
+                                <span>URL: <strong className="text-slate-200">bolt://localhost:7687</strong></span>
+                                <span>User: <strong className="text-slate-200">neo4j</strong></span>
+                                <span>Password: <strong className="text-slate-200">codeatlas123</strong></span>
+                            </div>
                         </div>
 
                         {/* 1-Click Sync SQLite to Neo4j Button */}
